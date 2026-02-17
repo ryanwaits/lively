@@ -103,6 +103,20 @@ export const StickyNote = memo(function StickyNote({
           ellipsis
         />
       )}
+      {/* Creator name */}
+      {object.created_by_name && (
+        <Text
+          x={PADDING}
+          y={object.height - PADDING - 12}
+          width={object.width - PADDING * 2}
+          text={object.created_by_name}
+          fontSize={10}
+          fontFamily="Inter, sans-serif"
+          fill="rgba(0,0,0,0.25)"
+          align="right"
+          listening={false}
+        />
+      )}
       {isSelected && interactive && onResize && onResizeEnd && (
         <ResizeHandles
           width={object.width}

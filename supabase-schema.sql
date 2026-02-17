@@ -23,6 +23,7 @@ CREATE TABLE board_objects (
   text TEXT NOT NULL DEFAULT '',
   z_index INTEGER NOT NULL DEFAULT 0,
   created_by UUID,
+  created_by_name TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   font_weight TEXT,
   font_style TEXT,

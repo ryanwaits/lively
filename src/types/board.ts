@@ -12,6 +12,7 @@ export interface BoardObject {
   text: string;
   z_index: number;
   created_by: string | null;
+  created_by_name?: string;
   updated_at: string;
   font_weight?: "normal" | "bold";
   font_style?: "normal" | "italic";
