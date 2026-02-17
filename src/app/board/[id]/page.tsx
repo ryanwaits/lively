@@ -3,8 +3,6 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { useParty } from "@/lib/sync/use-party";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useBoardStore } from "@/lib/store/board-store";
@@ -403,19 +401,13 @@ export default function BoardPage() {
       onMouseLeave={isCreationTool ? handleMouseLeave : undefined}
       style={{ cursor: isCreationTool ? "crosshair" : undefined }}
     >
-      {/* Top bar */}
-      <div className="absolute left-4 right-4 top-4 z-40 flex items-center justify-between rounded-xl border border-gray-200 bg-white/90 px-4 py-2 shadow-sm backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <h1 className="text-sm font-semibold text-gray-700">Whiteboard</h1>
-          {!isConnected && (
-            <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">
-              Reconnecting...
-            </span>
-          )}
-        </div>
+      {/* Presence + connection status */}
+      <div className="absolute right-4 top-4 z-40 flex items-center gap-3">
+        {!isConnected && (
+          <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700 shadow-sm">
+            Reconnecting...
+          </span>
+        )}
         <OnlineUsers />
       </div>
 

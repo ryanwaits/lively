@@ -2,24 +2,30 @@
 
 import { usePresenceStore } from "@/lib/store/presence-store";
 
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 export function OnlineUsers() {
   const onlineUsers = usePresenceStore((s) => s.onlineUsers);
 
+  if (onlineUsers.length === 0) return null;
+
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex -space-x-2">
       {onlineUsers.map((user) => (
         <div
           key={user.userId}
-          className="flex items-center gap-1.5 rounded-full bg-white/90 px-2 py-1 shadow-sm backdrop-blur"
+          className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-xs font-medium text-white shadow-md"
+          style={{ backgroundColor: user.color }}
           title={user.displayName}
         >
-          <div
-            className="h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: user.color }}
-          />
-          <span className="text-xs font-medium text-gray-700">
-            {user.displayName}
-          </span>
+          {getInitials(user.displayName)}
         </div>
       ))}
     </div>
