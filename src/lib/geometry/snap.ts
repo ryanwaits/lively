@@ -1,3 +1,4 @@
+import { rotatePoint } from "./rotation";
 import type { BoardObject } from "@/types/board";
 
 interface SnapTarget {
@@ -8,13 +9,21 @@ interface SnapTarget {
 
 const SNAP_RADIUS = 20;
 
-function edgeMidpoints(obj: { x: number; y: number; width: number; height: number }) {
-  return [
+function edgeMidpoints(obj: { x: number; y: number; width: number; height: number; rotation?: number }) {
+  const cx = obj.x + obj.width / 2;
+  const cy = obj.y + obj.height / 2;
+  const rotation = obj.rotation || 0;
+
+  const raw = [
     { x: obj.x + obj.width / 2, y: obj.y },               // top
     { x: obj.x + obj.width, y: obj.y + obj.height / 2 },  // right
     { x: obj.x + obj.width / 2, y: obj.y + obj.height },  // bottom
     { x: obj.x, y: obj.y + obj.height / 2 },              // left
   ];
+
+  if (rotation === 0) return raw;
+
+  return raw.map((p) => rotatePoint(p.x, p.y, cx, cy, rotation));
 }
 
 /**
@@ -46,12 +55,26 @@ export function findSnapTarget(
   if (best) return best;
 
   // Fallback: cursor is inside a shape body → snap to nearest edge midpoint
+  // For rotated shapes, un-rotate cursor before AABB test
   for (const obj of objects.values()) {
     if (obj.type === "line") continue;
     if (excludeIds?.has(obj.id)) continue;
+
+    const rotation = obj.rotation || 0;
+    let testX = cursor.x;
+    let testY = cursor.y;
+
+    if (rotation !== 0) {
+      const cx = obj.x + obj.width / 2;
+      const cy = obj.y + obj.height / 2;
+      const local = rotatePoint(cursor.x, cursor.y, cx, cy, -rotation);
+      testX = local.x;
+      testY = local.y;
+    }
+
     if (
-      cursor.x >= obj.x && cursor.x <= obj.x + obj.width &&
-      cursor.y >= obj.y && cursor.y <= obj.y + obj.height
+      testX >= obj.x && testX <= obj.x + obj.width &&
+      testY >= obj.y && testY <= obj.y + obj.height
     ) {
       const mps = edgeMidpoints(obj);
       let nearest = mps[0];
