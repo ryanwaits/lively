@@ -19,6 +19,7 @@ import { LineFormattingToolbar } from "@/components/canvas/line-formatting-toolb
 import { useViewportStore } from "@/lib/store/viewport-store";
 import { broadcastObjectCreate, broadcastObjectUpdate, broadcastObjectDelete } from "@/lib/sync/broadcast";
 import { computeLineBounds } from "@/lib/geometry/edge-intersection";
+import { getRotatedAABB } from "@/lib/geometry/rotation";
 import { findSnapTarget } from "@/lib/geometry/snap";
 import type { BoardObject, ToolMode } from "@/types/board";
 import type { BoardCanvasHandle } from "@/components/canvas/board-canvas";
@@ -70,6 +71,7 @@ export default function BoardPage() {
   const lineDrawing = useLineDrawing();
   const dragBeforeRef = useRef<BoardObject[] | null>(null);
   const resizeBeforeRef = useRef<BoardObject | null>(null);
+  const rotateBeforeRef = useRef<BoardObject | null>(null);
   const lineEditBeforeRef = useRef<BoardObject | null>(null);
 
   // Derive single selectedId for editing/formatting (first selected if exactly 1)
@@ -350,6 +352,35 @@ export default function BoardPage() {
     [objects, sendMessage, updateObject, recordAction]
   );
 
+  const handleRotate = useCallback(
+    (objectId: string, rotation: number) => {
+      const obj = objects.get(objectId);
+      if (!obj) return;
+      if (!rotateBeforeRef.current) {
+        rotateBeforeRef.current = { ...obj };
+      }
+      const updated = { ...obj, rotation, updated_at: new Date().toISOString() };
+      updateObject(updated);
+      broadcastObjectUpdate(sendMessage, updated, true);
+    },
+    [objects, sendMessage, updateObject]
+  );
+
+  const handleRotateEnd = useCallback(
+    (objectId: string, rotation: number) => {
+      const obj = objects.get(objectId);
+      if (!obj) return;
+      const updated = { ...obj, rotation, updated_at: new Date().toISOString() };
+      updateObject(updated);
+      broadcastObjectUpdate(sendMessage, updated, false);
+      if (rotateBeforeRef.current) {
+        recordAction({ type: "update", before: [rotateBeforeRef.current], after: [updated] });
+      }
+      rotateBeforeRef.current = null;
+    },
+    [objects, sendMessage, updateObject, recordAction]
+  );
+
   const handleLineUpdate = useCallback(
     (lineId: string, updates: Partial<BoardObject>) => {
       const obj = objects.get(lineId);
@@ -610,9 +641,11 @@ export default function BoardPage() {
       const rr = rect.x + rect.width;
       const rb = rect.y + rect.height;
       for (const obj of objects.values()) {
-        let bounds = { x: obj.x, y: obj.y, width: obj.width, height: obj.height };
+        let bounds: { x: number; y: number; width: number; height: number };
         if (obj.type === "line" && obj.points && obj.points.length >= 2) {
           bounds = computeLineBounds(obj.points);
+        } else {
+          bounds = getRotatedAABB(obj);
         }
         const ox = bounds.x;
         const oy = bounds.y;
@@ -712,6 +745,8 @@ export default function BoardPage() {
           onDoubleClick={handleObjectClick}
           onResize={handleResize}
           onResizeEnd={handleResizeEnd}
+          onRotate={handleRotate}
+          onRotateEnd={handleRotateEnd}
           onLineUpdate={handleLineUpdate}
           onLineUpdateEnd={handleLineUpdateEnd}
           interactive={activeTool === "select"}
@@ -749,9 +784,9 @@ export default function BoardPage() {
           <FormattingToolbar
             object={editingObject}
             onFormatChange={handleFormatChange}
-            screenX={editingObject.x * viewportScale + viewportPos.x}
-            screenY={editingObject.y * viewportScale + viewportPos.y}
-            screenW={editingObject.width * viewportScale}
+            screenX={getRotatedAABB(editingObject).x * viewportScale + viewportPos.x}
+            screenY={getRotatedAABB(editingObject).y * viewportScale + viewportPos.y}
+            screenW={getRotatedAABB(editingObject).width * viewportScale}
           />
           <InlineTextEditor
             object={editingObject}

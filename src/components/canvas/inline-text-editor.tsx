@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useCallback } from "react";
 import { useViewportStore } from "@/lib/store/viewport-store";
+import { getRotatedAABB } from "@/lib/geometry/rotation";
 import type { BoardObject } from "@/types/board";
 
 interface InlineTextEditorProps {
@@ -21,11 +22,12 @@ export function InlineTextEditor({
   const scale = useViewportStore((s) => s.scale);
   const pos = useViewportStore((s) => s.pos);
 
-  // Position in screen space
-  const screenX = object.x * scale + pos.x;
-  const screenY = object.y * scale + pos.y;
-  const screenW = object.width * scale;
-  const screenH = object.height * scale;
+  // Position in screen space — use AABB for rotated shapes
+  const aabb = getRotatedAABB(object);
+  const screenX = aabb.x * scale + pos.x;
+  const screenY = aabb.y * scale + pos.y;
+  const screenW = aabb.width * scale;
+  const screenH = aabb.height * scale;
 
   // Style based on object type
   const isSticky = object.type === "sticky";

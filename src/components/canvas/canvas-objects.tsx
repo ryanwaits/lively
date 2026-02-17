@@ -19,6 +19,8 @@ interface CanvasObjectsProps {
   onDoubleClick: (id: string) => void;
   onResize?: (id: string, updates: { x: number; y: number; width: number; height: number }) => void;
   onResizeEnd?: (id: string, updates: { x: number; y: number; width: number; height: number }) => void;
+  onRotate?: (id: string, rotation: number) => void;
+  onRotateEnd?: (id: string, rotation: number) => void;
   onLineUpdate?: (id: string, updates: Partial<BoardObject>) => void;
   onLineUpdateEnd?: (id: string, updates: Partial<BoardObject>) => void;
   interactive?: boolean;
@@ -35,6 +37,8 @@ export const CanvasObjects = memo(function CanvasObjects({
   onDoubleClick,
   onResize,
   onResizeEnd,
+  onRotate,
+  onRotateEnd,
   onLineUpdate,
   onLineUpdateEnd,
   interactive = true,
@@ -66,6 +70,8 @@ export const CanvasObjects = memo(function CanvasObjects({
                 isEditing={editingId === obj.id}
                 onResize={interactive ? onResize : undefined}
                 onResizeEnd={interactive ? onResizeEnd : undefined}
+                onRotate={interactive ? onRotate : undefined}
+                onRotateEnd={interactive ? onRotateEnd : undefined}
                 scale={scale}
               />
             );
@@ -76,6 +82,8 @@ export const CanvasObjects = memo(function CanvasObjects({
                 {...shared}
                 onResize={interactive ? onResize : undefined}
                 onResizeEnd={interactive ? onResizeEnd : undefined}
+                onRotate={interactive ? onRotate : undefined}
+                onRotateEnd={interactive ? onRotateEnd : undefined}
                 scale={scale}
               />
             );
@@ -88,6 +96,8 @@ export const CanvasObjects = memo(function CanvasObjects({
                 isEditing={editingId === obj.id}
                 onResize={interactive ? onResize : undefined}
                 onResizeEnd={interactive ? onResizeEnd : undefined}
+                onRotate={interactive ? onRotate : undefined}
+                onRotateEnd={interactive ? onRotateEnd : undefined}
                 scale={scale}
               />
             );
@@ -108,6 +118,8 @@ export const CanvasObjects = memo(function CanvasObjects({
                 {...shared}
                 onResize={interactive ? onResize : undefined}
                 onResizeEnd={interactive ? onResizeEnd : undefined}
+                onRotate={interactive ? onRotate : undefined}
+                onRotateEnd={interactive ? onRotateEnd : undefined}
                 scale={scale}
               />
             );
@@ -118,6 +130,8 @@ export const CanvasObjects = memo(function CanvasObjects({
                 {...shared}
                 onResize={interactive ? onResize : undefined}
                 onResizeEnd={interactive ? onResizeEnd : undefined}
+                onRotate={interactive ? onRotate : undefined}
+                onRotateEnd={interactive ? onRotateEnd : undefined}
                 scale={scale}
               />
             );
