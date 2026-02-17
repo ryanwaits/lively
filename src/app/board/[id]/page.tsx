@@ -324,6 +324,8 @@ export default function BoardPage() {
       if (e.key === "Escape") {
         if (editingId) {
           setEditingId(null);
+        } else if (CREATION_TOOLS.includes(activeTool)) {
+          setActiveTool("select");
         } else {
           setSelected(null);
         }
@@ -338,7 +340,7 @@ export default function BoardPage() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleDelete, editingId, selectedId, selectedIds, objects, setSelected]);
+  }, [handleDelete, editingId, selectedId, selectedIds, objects, setSelected, activeTool]);
 
   const handleSelectionRect = useCallback(
     (rect: { x: number; y: number; width: number; height: number } | null) => {
@@ -436,7 +438,7 @@ export default function BoardPage() {
           onDoubleClick={handleObjectClick}
           onResize={handleResize}
           onResizeEnd={handleResizeEnd}
-          interactive={activeTool !== "hand"}
+          interactive={activeTool === "select"}
           editingId={editingId}
           scale={viewportScale}
         />

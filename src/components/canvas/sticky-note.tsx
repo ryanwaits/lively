@@ -52,6 +52,7 @@ export const StickyNote = memo(function StickyNote({
       x={object.x}
       y={object.y}
       draggable={interactive}
+      listening={interactive}
       onClick={() => onSelect?.(id)}
       onTap={() => onSelect?.(id)}
       onDblClick={() => onDoubleClick?.(id)}

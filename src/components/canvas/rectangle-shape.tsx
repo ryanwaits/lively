@@ -46,6 +46,7 @@ export const RectangleShape = memo(function RectangleShape({
       x={object.x}
       y={object.y}
       draggable={interactive}
+      listening={interactive}
       onClick={() => onSelect?.(id)}
       onTap={() => onSelect?.(id)}
       onDragMove={handleDragMove}
