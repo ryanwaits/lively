@@ -11,9 +11,11 @@ import {
   Trash2,
   Menu,
   Home,
+  LogOut,
 } from "lucide-react";
 import { ColorPicker } from "./color-picker";
 import { fetchBoards, type Board } from "@/lib/supabase/boards";
+import { useAuthStore } from "@/lib/store/auth-store";
 import type { ToolMode } from "@/types/board";
 
 interface SidebarProps {
@@ -46,6 +48,7 @@ export function Sidebar({
   onDelete,
   currentBoardId,
 }: SidebarProps) {
+  const signOut = useAuthStore((s) => s.signOut);
   const [hoveredTool, setHoveredTool] = useState<ToolMode | null>(null);
   const [boardPanelOpen, setBoardPanelOpen] = useState(false);
   const [boards, setBoards] = useState<Board[]>([]);
@@ -150,6 +153,17 @@ export function Sidebar({
                 <span className="px-3 py-2 text-sm text-gray-400">No boards yet</span>
               )}
             </div>
+            <div className="my-2 h-px bg-gray-200" />
+            <button
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+              onClick={() => {
+                setBoardPanelOpen(false);
+                signOut();
+              }}
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Log out
+            </button>
           </div>
         )}
       </div>
