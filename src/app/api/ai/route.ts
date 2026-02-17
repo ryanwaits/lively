@@ -134,13 +134,12 @@ export async function POST(request: Request) {
       if (response.stop_reason !== "tool_use") break;
 
       const toolUseBlocks = response.content.filter(
-        (b): b is Anthropic.ContentBlockParam & { type: "tool_use"; id: string; name: string; input: Record<string, unknown> } =>
-          b.type === "tool_use"
+        (b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use"
       );
 
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
       for (const tool of toolUseBlocks) {
-        const result = await executeToolCall(tool.name, tool.input, ctx);
+        const result = await executeToolCall(tool.name, tool.input as Record<string, unknown>, ctx);
         if (result.objects) objectsCreated += result.objects.length;
         if (["moveObject", "resizeObject", "updateText", "changeColor"].includes(tool.name)) {
           objectsModified++;
