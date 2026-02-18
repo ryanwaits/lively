@@ -174,7 +174,7 @@ export default class BoardRoom implements Party.Server {
     this.broadcastPresence();
   }
 
-  onMessage(message: string, sender: Party.Connection) {
+  async onMessage(message: string, sender: Party.Connection) {
     const data: ClientMessage = JSON.parse(message);
     const senderState = this.connections.get(sender.id);
     if (!senderState) return;
@@ -295,11 +295,11 @@ export default class BoardRoom implements Party.Server {
         };
         this.room.broadcast(JSON.stringify(deleteMsg));
 
-        // Persist
-        this.persistFrames();
-        for (const id of deletedIds) {
-          this.deleteObject(id);
-        }
+        // Persist (await to ensure Supabase is updated before handler returns)
+        await this.persistFrames();
+        await Promise.all(
+          Array.from(deletedIds).map((id) => this.deleteObject(id))
+        );
         break;
       }
     }
