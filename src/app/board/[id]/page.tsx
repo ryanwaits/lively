@@ -17,7 +17,7 @@ import { InlineTextEditor } from "@/components/canvas/inline-text-editor";
 import { FormattingToolbar } from "@/components/canvas/formatting-toolbar";
 import { LineFormattingToolbar } from "@/components/canvas/line-formatting-toolbar";
 import { useViewportStore } from "@/lib/store/viewport-store";
-import { broadcastObjectCreate, broadcastObjectUpdate, broadcastObjectDelete, broadcastFrameCreate } from "@/lib/sync/broadcast";
+import { broadcastObjectCreate, broadcastObjectUpdate, broadcastObjectDelete, broadcastFrameCreate, broadcastFrameDelete } from "@/lib/sync/broadcast";
 import { computeLineBounds } from "@/lib/geometry/edge-intersection";
 import { getRotatedAABB } from "@/lib/geometry/rotation";
 import { findSnapTarget } from "@/lib/geometry/snap";
@@ -684,6 +684,18 @@ export default function BoardPage() {
     }
   }, [sendMessage]);
 
+  const frames = useFrameStore((s) => s.frames);
+
+  const handleDeleteFrame = useCallback(
+    (frameId: string) => {
+      const { frames: currentFrames, deleteFrame } = useFrameStore.getState();
+      if (currentFrames.length <= 1) return;
+      broadcastFrameDelete(sendMessage, frameId);
+      deleteFrame(frameId);
+    },
+    [sendMessage]
+  );
+
   // Snap target for line drawing — uses stageMousePos so it works before drawing starts
   const lineSnapTarget = useMemo(() => {
     if (activeTool !== "line" || !stageMousePos) return null;
@@ -853,6 +865,8 @@ export default function BoardPage() {
         onAIToggle={() => setAiOpen((v) => !v)}
         aiOpen={aiOpen}
         onNewFrame={handleNewFrame}
+        frames={frames}
+        onDeleteFrame={handleDeleteFrame}
       />
 
       {/* AI Command Bar */}

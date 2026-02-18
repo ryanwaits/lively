@@ -65,6 +65,12 @@ export function useParty({ roomId, userId, displayName }: UsePartyOptions) {
         case "frame:create":
           useFrameStore.getState().addFrame(data.frame);
           break;
+        case "frame:delete":
+          useFrameStore.getState().deleteFrame(data.frameId);
+          for (const id of data.deletedObjectIds) {
+            deleteObject(id);
+          }
+          break;
       }
     });
 

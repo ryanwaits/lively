@@ -1,6 +1,7 @@
 import type * as Party from "partykit/server";
 import type { ClientMessage, ServerMessage } from "../src/types/messages";
 import type { PresenceUser, CursorData, BoardObject, Frame } from "../src/types/board";
+import { frameOriginX, FRAME_ORIGIN_Y, BOARD_WIDTH, BOARD_HEIGHT } from "../src/lib/geometry/frames";
 
 const COLORS = [
   "#ef4444", "#f97316", "#eab308", "#22c55e",
@@ -230,6 +231,75 @@ export default class BoardRoom implements Party.Server {
         const msg: ServerMessage = { type: "frame:create", frame: data.frame };
         this.room.broadcast(JSON.stringify(msg));
         this.persistFrames();
+        break;
+      }
+
+      case "frame:delete": {
+        if (this.frames.length <= 1) break;
+        const frame = this.frames.find((f) => f.id === data.frameId);
+        if (!frame) break;
+
+        // Compute frame bounds
+        const fx = frameOriginX(frame.index);
+        const fy = FRAME_ORIGIN_Y;
+        const fr = fx + BOARD_WIDTH;
+        const fb = fy + BOARD_HEIGHT;
+
+        // Collect objects whose center falls within frame bounds
+        const deletedIds = new Set<string>();
+        for (const [id, obj] of this.objects) {
+          if (obj.type === "line") continue; // handle lines separately
+          const cx = obj.x + obj.width / 2;
+          const cy = obj.y + obj.height / 2;
+          if (cx >= fx && cx <= fr && cy >= fy && cy <= fb) {
+            deletedIds.add(id);
+          }
+        }
+
+        // Collect lines connected to deleted objects
+        for (const [id, obj] of this.objects) {
+          if (obj.type !== "line") continue;
+          const startConnected = obj.start_object_id && deletedIds.has(obj.start_object_id);
+          const endConnected = obj.end_object_id && deletedIds.has(obj.end_object_id);
+          if (startConnected || endConnected) {
+            deletedIds.add(id);
+          }
+        }
+
+        // Also collect unconnected lines within frame bounds (by first point center)
+        for (const [id, obj] of this.objects) {
+          if (obj.type !== "line" || deletedIds.has(id)) continue;
+          if (obj.points && obj.points.length >= 2) {
+            const pts = obj.points;
+            const cx = (pts[0].x + pts[pts.length - 1].x) / 2;
+            const cy = (pts[0].y + pts[pts.length - 1].y) / 2;
+            if (cx >= fx && cx <= fr && cy >= fy && cy <= fb) {
+              deletedIds.add(id);
+            }
+          }
+        }
+
+        // Remove objects from memory
+        for (const id of deletedIds) {
+          this.objects.delete(id);
+        }
+
+        // Remove frame
+        this.frames = this.frames.filter((f) => f.id !== data.frameId);
+
+        // Broadcast
+        const deleteMsg: ServerMessage = {
+          type: "frame:delete",
+          frameId: data.frameId,
+          deletedObjectIds: Array.from(deletedIds),
+        };
+        this.room.broadcast(JSON.stringify(deleteMsg));
+
+        // Persist
+        this.persistFrames();
+        for (const id of deletedIds) {
+          this.deleteObject(id);
+        }
         break;
       }
     }

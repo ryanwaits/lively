@@ -6,7 +6,8 @@ export type ClientMessage =
   | { type: "object:create"; object: BoardObject }
   | { type: "object:update"; object: BoardObject; ephemeral?: boolean }
   | { type: "object:delete"; objectId: string }
-  | { type: "frame:create"; frame: Frame };
+  | { type: "frame:create"; frame: Frame }
+  | { type: "frame:delete"; frameId: string };
 
 // Messages sent from server to clients
 export type ServerMessage =
@@ -17,4 +18,5 @@ export type ServerMessage =
   | { type: "object:update"; object: BoardObject }
   | { type: "object:delete"; objectId: string }
   | { type: "frame:create"; frame: Frame }
-  | { type: "frame:sync"; frames: Frame[] };
+  | { type: "frame:sync"; frames: Frame[] }
+  | { type: "frame:delete"; frameId: string; deletedObjectIds: string[] };

@@ -18,3 +18,7 @@ export function broadcastObjectDelete(send: SendFn, objectId: string) {
 export function broadcastFrameCreate(send: SendFn, frame: Frame) {
   send({ type: "frame:create", frame });
 }
+
+export function broadcastFrameDelete(send: SendFn, frameId: string) {
+  send({ type: "frame:delete", frameId });
+}
