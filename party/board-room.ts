@@ -1,6 +1,6 @@
 import type * as Party from "partykit/server";
 import type { ClientMessage, ServerMessage } from "../src/types/messages";
-import type { PresenceUser, CursorData, BoardObject } from "../src/types/board";
+import type { PresenceUser, CursorData, BoardObject, Frame } from "../src/types/board";
 
 const COLORS = [
   "#ef4444", "#f97316", "#eab308", "#22c55e",
@@ -17,21 +17,25 @@ interface ConnectionState {
 export default class BoardRoom implements Party.Server {
   connections: Map<string, ConnectionState> = new Map();
   objects: Map<string, BoardObject> = new Map();
+  frames: Frame[] = [];
 
   constructor(readonly room: Party.Room) {}
 
+  private get boardId(): string {
+    return this.room.id === "default"
+      ? "00000000-0000-0000-0000-000000000000"
+      : this.room.id;
+  }
+
   async onStart() {
-    // Load objects from Supabase on cold start
     const supabaseUrl = this.room.env.SUPABASE_URL as string;
     const serviceRoleKey = this.room.env.SUPABASE_SERVICE_ROLE_KEY as string;
 
     if (supabaseUrl && serviceRoleKey) {
       try {
-        const boardId = this.room.id === "default"
-          ? "00000000-0000-0000-0000-000000000000"
-          : this.room.id;
-        const res = await fetch(
-          `${supabaseUrl}/rest/v1/board_objects?board_id=eq.${boardId}&select=*`,
+        // Load objects
+        const objRes = await fetch(
+          `${supabaseUrl}/rest/v1/board_objects?board_id=eq.${this.boardId}&select=*`,
           {
             headers: {
               apikey: serviceRoleKey,
@@ -39,21 +43,47 @@ export default class BoardRoom implements Party.Server {
             },
           }
         );
-        if (res.ok) {
-          const rows: BoardObject[] = await res.json();
+        if (objRes.ok) {
+          const rows: BoardObject[] = await objRes.json();
           for (const obj of rows) {
             this.objects.set(obj.id, obj);
           }
         }
+
+        // Load frames from boards table
+        const boardRes = await fetch(
+          `${supabaseUrl}/rest/v1/boards?id=eq.${this.boardId}&select=frames`,
+          {
+            headers: {
+              apikey: serviceRoleKey,
+              Authorization: `Bearer ${serviceRoleKey}`,
+            },
+          }
+        );
+        if (boardRes.ok) {
+          const boards = await boardRes.json();
+          if (boards.length > 0 && Array.isArray(boards[0].frames) && boards[0].frames.length > 0) {
+            this.frames = boards[0].frames;
+          } else {
+            // Default: single frame
+            this.frames = [{ id: crypto.randomUUID(), index: 0, label: "Frame 1" }];
+            this.persistFrames();
+          }
+        }
       } catch (e) {
-        console.error("Failed to load board objects:", e);
+        console.error("Failed to load board data:", e);
       }
+    }
+
+    // Ensure at least one frame exists
+    if (this.frames.length === 0) {
+      this.frames = [{ id: crypto.randomUUID(), index: 0, label: "Frame 1" }];
     }
   }
 
   async onRequest(req: Party.Request): Promise<Response> {
     if (req.method === "GET") {
-      return Response.json({ objects: Array.from(this.objects.values()) });
+      return Response.json({ objects: Array.from(this.objects.values()), frames: this.frames });
     }
 
     if (req.method === "POST") {
@@ -132,6 +162,13 @@ export default class BoardRoom implements Party.Server {
     };
     conn.send(JSON.stringify(syncMsg));
 
+    // Send current frames to new client
+    const frameSyncMsg: ServerMessage = {
+      type: "frame:sync",
+      frames: this.frames,
+    };
+    conn.send(JSON.stringify(frameSyncMsg));
+
     // Broadcast updated presence
     this.broadcastPresence();
   }
@@ -154,7 +191,6 @@ export default class BoardRoom implements Party.Server {
             lastUpdate: Date.now(),
           },
         };
-        // Broadcast to all except sender
         this.room.broadcast(JSON.stringify(cursorMsg), [sender.id]);
         break;
       }
@@ -169,7 +205,6 @@ export default class BoardRoom implements Party.Server {
 
       case "object:update": {
         const existing = this.objects.get(data.object.id);
-        // LWW: only accept if newer
         if (!existing || data.object.updated_at >= existing.updated_at) {
           this.objects.set(data.object.id, data.object);
           const msg: ServerMessage = { type: "object:update", object: data.object };
@@ -186,6 +221,15 @@ export default class BoardRoom implements Party.Server {
         const msg: ServerMessage = { type: "object:delete", objectId: data.objectId };
         this.room.broadcast(JSON.stringify(msg));
         this.deleteObject(data.objectId);
+        break;
+      }
+
+      case "frame:create": {
+        this.frames.push(data.frame);
+        this.frames.sort((a, b) => a.index - b.index);
+        const msg: ServerMessage = { type: "frame:create", frame: data.frame };
+        this.room.broadcast(JSON.stringify(msg));
+        this.persistFrames();
         break;
       }
     }
@@ -229,6 +273,33 @@ export default class BoardRoom implements Party.Server {
       }
     } catch (e) {
       console.error("Failed to persist object:", e);
+    }
+  }
+
+  private async persistFrames() {
+    const supabaseUrl = this.room.env.SUPABASE_URL as string;
+    const serviceRoleKey = this.room.env.SUPABASE_SERVICE_ROLE_KEY as string;
+    if (!supabaseUrl || !serviceRoleKey) return;
+
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/boards?id=eq.${this.boardId}`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ frames: this.frames }),
+        }
+      );
+      if (!res.ok) {
+        const body = await res.text();
+        console.error(`persistFrames failed (${res.status}):`, body);
+      }
+    } catch (e) {
+      console.error("Failed to persist frames:", e);
     }
   }
 

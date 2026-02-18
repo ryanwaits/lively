@@ -6,6 +6,7 @@ import type { ClientMessage, ServerMessage } from "@/types/messages";
 import { usePresenceStore } from "@/lib/store/presence-store";
 import { useBoardStore } from "@/lib/store/board-store";
 import { useUndoStore } from "@/lib/store/undo-store";
+import { useFrameStore } from "@/lib/store/frame-store";
 
 interface UsePartyOptions {
   roomId: string;
@@ -57,6 +58,12 @@ export function useParty({ roomId, userId, displayName }: UsePartyOptions) {
           break;
         case "object:delete":
           deleteObject(data.objectId);
+          break;
+        case "frame:sync":
+          useFrameStore.getState().syncFrames(data.frames);
+          break;
+        case "frame:create":
+          useFrameStore.getState().addFrame(data.frame);
           break;
       }
     });
