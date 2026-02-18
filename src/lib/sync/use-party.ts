@@ -82,9 +82,7 @@ export function useParty({ roomId, userId, displayName }: UsePartyOptions) {
   }, [roomId, userId, displayName]);
 
   const sendMessage = useCallback((msg: ClientMessage) => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(msg));
-    }
+    socketRef.current?.send(JSON.stringify(msg));
   }, []);
 
   return { sendMessage, isConnected };
