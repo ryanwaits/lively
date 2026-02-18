@@ -1,5 +1,5 @@
 import type { ClientMessage } from "@/types/messages";
-import type { BoardObject } from "@/types/board";
+import type { BoardObject, Frame } from "@/types/board";
 
 type SendFn = (msg: ClientMessage) => void;
 
@@ -13,4 +13,8 @@ export function broadcastObjectUpdate(send: SendFn, object: BoardObject, ephemer
 
 export function broadcastObjectDelete(send: SendFn, objectId: string) {
   send({ type: "object:delete", objectId });
+}
+
+export function broadcastFrameCreate(send: SendFn, frame: Frame) {
+  send({ type: "frame:create", frame });
 }
