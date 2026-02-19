@@ -16,6 +16,7 @@
     "@waits/openblocks-client": "workspace:*",
     "@waits/openblocks-storage": "workspace:*",
     "@waits/openblocks-react": "workspace:*",
+    "@waits/openblocks-ui": "workspace:*",
     "@waits/openblocks-types": "workspace:*"
   },
   "devDependencies": {
