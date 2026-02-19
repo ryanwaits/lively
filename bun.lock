@@ -34,14 +34,41 @@
         "typescript": "^5",
       },
     },
+    "packages/client": {
+      "name": "@waits/openblocks-client",
+      "version": "0.0.1",
+      "dependencies": {
+        "@waits/openblocks-types": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/ws": "^8.5.14",
+        "@waits/openblocks-server": "workspace:*",
+        "typescript": "^5",
+        "ws": "^8.19.0",
+      },
+      "peerDependencies": {
+        "ws": "^8",
+      },
+      "optionalPeers": [
+        "ws",
+      ],
+    },
     "packages/server": {
       "name": "@waits/openblocks-server",
       "version": "0.0.1",
       "dependencies": {
+        "@waits/openblocks-types": "workspace:*",
         "ws": "^8.19.0",
       },
       "devDependencies": {
         "@types/ws": "^8.5.14",
+        "typescript": "^5",
+      },
+    },
+    "packages/types": {
+      "name": "@waits/openblocks-types",
+      "version": "0.0.1",
+      "devDependencies": {
         "typescript": "^5",
       },
     },
@@ -595,7 +622,11 @@
 
     "@unrs/resolver-binding-win32-x64-msvc": ["@unrs/resolver-binding-win32-x64-msvc@1.11.1", "", { "os": "win32", "cpu": "x64" }, "sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g=="],
 
+    "@waits/openblocks-client": ["@waits/openblocks-client@workspace:packages/client"],
+
     "@waits/openblocks-server": ["@waits/openblocks-server@workspace:packages/server"],
+
+    "@waits/openblocks-types": ["@waits/openblocks-types@workspace:packages/types"],
 
     "accepts": ["accepts@2.0.0", "", { "dependencies": { "mime-types": "^3.0.0", "negotiator": "^1.0.0" } }, "sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng=="],
 
