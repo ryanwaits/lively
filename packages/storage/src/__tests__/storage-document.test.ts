@@ -124,4 +124,22 @@ describe("StorageDocument", () => {
     inner.set("val", 2);
     expect(fired).toBe(countAfterFirst);
   });
+
+  it("deep subscription on root fires after applySnapshot", () => {
+    const root = new LiveObject<{ x: number }>({ x: 1 });
+    const doc = new StorageDocument(root);
+
+    let fired = 0;
+    doc.subscribe(doc.getRoot(), () => fired++, { isDeep: true });
+
+    // First snapshot triggers callback
+    doc.applySnapshot({ type: "LiveObject", data: { x: 50 } });
+    expect(fired).toBe(1);
+
+    // After snapshot, the deep sub should still fire on mutations to the new root
+    const newRoot = doc.getRoot();
+    newRoot.set("x", 100);
+    expect(fired).toBe(2);
+    expect(newRoot.get("x")).toBe(100);
+  });
 });

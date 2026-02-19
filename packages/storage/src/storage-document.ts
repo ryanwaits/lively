@@ -61,6 +61,13 @@ export class StorageDocument implements StorageDocumentHost {
       newRoot._subscribers.add(cb);
     }
 
+    // Re-target deep subscriptions that pointed at oldRoot
+    for (const sub of this._subscriptions) {
+      if (sub.target === oldRoot) {
+        sub.target = newRoot;
+      }
+    }
+
     this._root = newRoot;
     this._attachTree(newRoot, []);
 
