@@ -80,6 +80,12 @@ export class Room {
         this.batching = false;
         this.batchQueue = [];
         this.batchStorageOps = [];
+        if (this.cursorTimer) {
+          clearTimeout(this.cursorTimer);
+          this.cursorTimer = null;
+        }
+        this.pendingCursor = null;
+        this.lastCursorSend = 0;
       }
       this.emitter.emit("status", status);
     });
