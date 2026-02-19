@@ -62,10 +62,12 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
     this.setStatus("disconnected");
   }
 
-  send(data: string): void {
+  send(data: string): boolean {
     if (this.ws && this.status === "connected") {
       this.ws.send(data);
+      return true;
     }
+    return false;
   }
 
   getStatus(): ConnectionStatus {

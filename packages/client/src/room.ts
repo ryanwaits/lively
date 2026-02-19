@@ -59,7 +59,7 @@ export class Room {
   constructor(config: RoomConfig) {
     this.roomId = config.roomId;
     this.userId = config.userId;
-    this.cursorThrottleMs = config.cursorThrottleMs ?? 50;
+    this.cursorThrottleMs = Math.max(1, config.cursorThrottleMs ?? 50);
     this.initialStorageData = config.initialStorage;
 
     const wsScheme = config.serverUrl.replace(/^http/, "ws");
@@ -77,6 +77,9 @@ export class Room {
       if (status === "reconnecting" || status === "disconnected") {
         this.presence = [];
         this.cursors.clear();
+        this.batching = false;
+        this.batchQueue = [];
+        this.batchStorageOps = [];
       }
       this.emitter.emit("status", status);
     });
@@ -91,6 +94,11 @@ export class Room {
   }
 
   disconnect(): void {
+    if (this.cursorTimer) {
+      clearTimeout(this.cursorTimer);
+      this.cursorTimer = null;
+    }
+    this.pendingCursor = null;
     this.connection.disconnect();
   }
 

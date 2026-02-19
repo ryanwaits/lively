@@ -21,7 +21,7 @@ export class EventEmitter<E extends EventMap> {
     const set = this.listeners.get(event);
     if (!set) return;
     for (const cb of set) {
-      (cb as (...a: any[]) => void)(...args);
+      (cb as (...args: Parameters<E[K]>) => void)(...args);
     }
   }
 

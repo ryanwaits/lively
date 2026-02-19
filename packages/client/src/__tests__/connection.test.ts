@@ -180,4 +180,18 @@ describe("ConnectionManager", () => {
     MockWebSocket.instances[0].simulateError(errorEvent);
     expect(cb).toHaveBeenCalledTimes(1);
   });
+
+  // --- Task #11: send() returns boolean ---
+
+  it("send returns false when disconnected", () => {
+    const cm = createManager();
+    expect(cm.send("hello")).toBe(false);
+  });
+
+  it("send returns true when connected", () => {
+    const cm = createManager();
+    cm.connect();
+    MockWebSocket.instances[0].simulateOpen();
+    expect(cm.send("hello")).toBe(true);
+  });
 });
