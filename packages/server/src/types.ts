@@ -1,29 +1,17 @@
 import type { IncomingMessage } from "node:http";
 import type WebSocket from "ws";
 
-// --- Presence & Cursor ---
+// Re-export shared types from @waits/openblocks-types
+export type {
+  PresenceUser,
+  CursorData,
+  ConnectionStatus,
+  PresenceMessage,
+  CursorUpdateMessage,
+  ClientCursorMessage,
+} from "@waits/openblocks-types";
 
-export interface PresenceUser {
-  userId: string;
-  displayName: string;
-  color: string;
-  connectedAt: number;
-}
-
-export interface CursorData {
-  userId: string;
-  displayName: string;
-  color: string;
-  x: number;
-  y: number;
-  lastUpdate: number;
-}
-
-export type ConnectionStatus =
-  | "connecting"
-  | "connected"
-  | "reconnecting"
-  | "disconnected";
+import type { PresenceUser } from "@waits/openblocks-types";
 
 // --- Auth ---
 
