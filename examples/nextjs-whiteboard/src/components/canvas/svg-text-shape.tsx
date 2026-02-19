@@ -96,6 +96,7 @@ export const SvgTextShape = memo(function SvgTextShape({
               color: object.text ? (object.text_color || "#1f2937") : "#9ca3af",
               overflow: "hidden",
               wordBreak: "break-word",
+              whiteSpace: "pre-wrap",
               lineHeight: 1.4,
               userSelect: "none",
             }}
