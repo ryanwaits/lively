@@ -120,11 +120,12 @@ export class LiveObject<
   }
 
   static _deserialize(
-    serialized: SerializedLiveObject
+    serialized: SerializedLiveObject,
+    deserialize?: (data: SerializedCrdt) => unknown
   ): LiveObject {
     const obj = new LiveObject();
     for (const [key, val] of Object.entries(serialized.data)) {
-      const value = deserializeValue(val);
+      const value = deserialize ? deserialize(val) : deserializeValue(val);
       obj._fields.set(key, { value, clock: 0 });
     }
     return obj;

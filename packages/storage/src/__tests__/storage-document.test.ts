@@ -142,4 +142,73 @@ describe("StorageDocument", () => {
     expect(fired).toBe(2);
     expect(newRoot.get("x")).toBe(100);
   });
+
+  // --- Task #1: deserializeCrdt uses _deserialize statics ---
+
+  it("deserialize does not call set() or tick clock", () => {
+    const map = new LiveMap<number>();
+    const root = new LiveObject({ map, name: "test" });
+    const doc = new StorageDocument(root);
+    map.set("a", 1);
+    map.set("b", 2);
+
+    const serialized = doc.serialize();
+    const doc2 = StorageDocument.deserialize(serialized);
+    // Clock should be 0 since _deserialize bypasses set()
+    expect(doc2._clock.value).toBe(0);
+    const root2 = doc2.getRoot();
+    expect(root2.get("name")).toBe("test");
+    expect((root2.get("map") as LiveMap<number>).get("a")).toBe(1);
+  });
+
+  // --- Task #2: applySnapshot re-targets deep subs on nested nodes ---
+
+  it("applySnapshot re-targets deep subs on nested nodes", () => {
+    const inner = new LiveObject<{ val: number }>({ val: 0 });
+    const root = new LiveObject({ nested: inner });
+    const doc = new StorageDocument(root);
+
+    let fired = 0;
+    // Deep sub on the nested node (not root)
+    doc.subscribe(inner, () => fired++, { isDeep: true });
+
+    // Snapshot replaces everything
+    doc.applySnapshot({
+      type: "LiveObject",
+      data: {
+        nested: { type: "LiveObject", data: { val: 99 } },
+      },
+    });
+    // Snapshot itself fires
+    expect(fired).toBe(1);
+
+    // Mutate the NEW nested node — deep sub should still fire
+    const newInner = doc.getRoot().get("nested") as LiveObject<{ val: number }>;
+    newInner.set("val", 200);
+    expect(fired).toBe(2);
+  });
+
+  it("applySnapshot re-targets shallow subs on nested nodes", () => {
+    const inner = new LiveObject<{ val: number }>({ val: 0 });
+    const root = new LiveObject({ nested: inner });
+    const doc = new StorageDocument(root);
+
+    let fired = 0;
+    // Shallow sub on the nested node
+    doc.subscribe(inner, () => fired++);
+
+    doc.applySnapshot({
+      type: "LiveObject",
+      data: {
+        nested: { type: "LiveObject", data: { val: 50 } },
+      },
+    });
+    // Snapshot notifies shallow subs on matched nodes
+    expect(fired).toBe(1);
+
+    // Mutate the new nested node — shallow sub should still fire
+    const newInner = doc.getRoot().get("nested") as LiveObject<{ val: number }>;
+    newInner.set("val", 100);
+    expect(fired).toBe(2);
+  });
 });

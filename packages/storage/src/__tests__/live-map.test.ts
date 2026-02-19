@@ -99,4 +99,63 @@ describe("LiveMap", () => {
     expect(ops[0].type).toBe("set");
     expect(ops[0].key).toBe("key");
   });
+
+  // --- Task #3: O(1) size + compact ---
+
+  it("size tracks correctly through set/delete/applyOp", () => {
+    const map = new LiveMap<number>();
+    const doc = createDoc(map);
+    expect(map.size).toBe(0);
+
+    map.set("a", 1);
+    expect(map.size).toBe(1);
+
+    map.set("b", 2);
+    expect(map.size).toBe(2);
+
+    // Overwrite existing — no change
+    map.set("a", 10);
+    expect(map.size).toBe(2);
+
+    map.delete("a");
+    expect(map.size).toBe(1);
+
+    // Delete again — no change
+    map.delete("a");
+    expect(map.size).toBe(1);
+
+    // Re-add tombstoned key
+    map.set("a", 100);
+    expect(map.size).toBe(2);
+
+    // applyOp set for new key
+    map._applyOp({ type: "set", path: ["map"], key: "c", value: 3, clock: 99 });
+    expect(map.size).toBe(3);
+
+    // applyOp delete
+    map._applyOp({ type: "delete", path: ["map"], key: "c", clock: 100 });
+    expect(map.size).toBe(2);
+  });
+
+  it("compact removes tombstones", () => {
+    const map = new LiveMap<number>();
+    const doc = createDoc(map);
+    map.set("a", 1);
+    map.set("b", 2);
+    map.set("c", 3);
+    map.delete("b");
+
+    expect(map.size).toBe(2);
+    map.compact();
+    expect(map.size).toBe(2);
+    // Verify b is truly gone from internal entries
+    expect(map.has("b")).toBe(false);
+    expect(map.get("a")).toBe(1);
+    expect(map.get("c")).toBe(3);
+  });
+
+  it("constructor initializes _liveCount", () => {
+    const map = new LiveMap<number>([["x", 1], ["y", 2]]);
+    expect(map.size).toBe(2);
+  });
 });

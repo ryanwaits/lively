@@ -56,15 +56,30 @@ export class StorageDocument implements StorageDocumentHost {
     const oldRoot = this._root;
     const newRoot = deserializeCrdt(serialized) as LiveObject;
 
-    // Transfer shallow subscribers from old root to new root
-    for (const cb of oldRoot._subscribers) {
-      newRoot._subscribers.add(cb);
+    // Build path→node maps for old and new trees
+    const oldNodes = new Map<string, AbstractCrdt>();
+    this._collectNodes(oldRoot, [], oldNodes);
+    const newNodes = new Map<string, AbstractCrdt>();
+    this._collectNodes(newRoot, [], newNodes);
+
+    // Transfer shallow subscribers from matched old→new nodes
+    for (const [pathKey, oldNode] of oldNodes) {
+      const newNode = newNodes.get(pathKey);
+      if (newNode) {
+        for (const cb of oldNode._subscribers) {
+          newNode._subscribers.add(cb);
+        }
+      }
     }
 
-    // Re-target deep subscriptions that pointed at oldRoot
+    // Re-target deep subscriptions by path lookup
     for (const sub of this._subscriptions) {
-      if (sub.target === oldRoot) {
-        sub.target = newRoot;
+      const pathKey = this._nodePathKey(sub.target, oldNodes);
+      if (pathKey !== null) {
+        const newNode = newNodes.get(pathKey);
+        if (newNode) {
+          sub.target = newNode;
+        }
       }
     }
 
@@ -76,8 +91,10 @@ export class StorageDocument implements StorageDocumentHost {
       sub.callback();
     }
     // Notify all shallow subscribers on new root
-    for (const cb of newRoot._subscribers) {
-      cb();
+    for (const [, newNode] of newNodes) {
+      for (const cb of newNode._subscribers) {
+        cb();
+      }
     }
   }
 
@@ -125,6 +142,40 @@ export class StorageDocument implements StorageDocumentHost {
         sub.callback();
       }
     }
+  }
+
+  private _collectNodes(
+    node: AbstractCrdt,
+    path: string[],
+    map: Map<string, AbstractCrdt>
+  ): void {
+    const key = path.join("\0");
+    map.set(key, node);
+
+    if (node instanceof LiveObject) {
+      const obj = node.toObject();
+      for (const [k, value] of Object.entries(obj)) {
+        if (value instanceof AbstractCrdt) {
+          this._collectNodes(value, [...path, k], map);
+        }
+      }
+    } else if (node instanceof LiveMap) {
+      node.forEach((value: unknown, k: string) => {
+        if (value instanceof AbstractCrdt) {
+          this._collectNodes(value as AbstractCrdt, [...path, k], map);
+        }
+      });
+    }
+  }
+
+  private _nodePathKey(
+    target: AbstractCrdt,
+    nodeMap: Map<string, AbstractCrdt>
+  ): string | null {
+    for (const [key, node] of nodeMap) {
+      if (node === target) return key;
+    }
+    return null;
   }
 
   private _attachTree(node: AbstractCrdt, path: string[]): void {
@@ -211,36 +262,12 @@ export function deserializeCrdt(data: SerializedCrdt): unknown {
   }
 
   switch (data.type) {
-    case "LiveObject": {
-      const serialized = data as SerializedLiveObject;
-      const obj = new LiveObject();
-      for (const [key, val] of Object.entries(serialized.data)) {
-        const value = deserializeCrdt(val);
-        obj.set(key, value);
-      }
-      return obj;
-    }
-    case "LiveMap": {
-      const serialized = data as SerializedLiveMap;
-      const map = new LiveMap();
-      for (const [key, val] of Object.entries(serialized.entries)) {
-        const value = deserializeCrdt(val);
-        map.set(key, value);
-      }
-      return map;
-    }
-    case "LiveList": {
-      const serialized = data as SerializedLiveList;
-      const list = new LiveList();
-      const sorted = [...serialized.items].sort((a, b) =>
-        a.position < b.position ? -1 : a.position > b.position ? 1 : 0
-      );
-      for (const item of sorted) {
-        const value = deserializeCrdt(item.value);
-        list.push(value);
-      }
-      return list;
-    }
+    case "LiveObject":
+      return LiveObject._deserialize(data as SerializedLiveObject, deserializeCrdt);
+    case "LiveMap":
+      return LiveMap._deserialize(data as SerializedLiveMap, deserializeCrdt);
+    case "LiveList":
+      return LiveList._deserialize(data as SerializedLiveList, deserializeCrdt);
     default:
       return data;
   }

@@ -16,6 +16,7 @@ interface MapEntry<V> {
 export class LiveMap<V = unknown> extends AbstractCrdt {
   private _entries = new Map<string, MapEntry<V>>();
   private _immutableCache: ReadonlyMap<string, V> | null = null;
+  private _liveCount = 0;
 
   constructor(entries?: Iterable<[string, V]>) {
     super();
@@ -26,6 +27,7 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
           (value as AbstractCrdt)._path = [...this._path, key];
         }
         this._entries.set(key, { value, clock: 0, deleted: false });
+        this._liveCount++;
       }
     }
   }
@@ -41,6 +43,11 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
 
     if (value instanceof AbstractCrdt) {
       (value as AbstractCrdt)._attach(this._doc!, [...this._path, key], this);
+    }
+
+    const existing = this._entries.get(key);
+    if (!existing || existing.deleted) {
+      this._liveCount++;
     }
 
     this._entries.set(key, { value, clock, deleted: false });
@@ -64,6 +71,7 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
     const clock = this._doc ? this._doc._clock.tick() : 0;
     entry.deleted = true;
     entry.clock = clock;
+    this._liveCount--;
     this._immutableCache = null;
 
     const op: DeleteOp = {
@@ -82,11 +90,15 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
   }
 
   get size(): number {
-    let count = 0;
-    for (const entry of this._entries.values()) {
-      if (!entry.deleted) count++;
+    return this._liveCount;
+  }
+
+  compact(): void {
+    for (const [key, entry] of this._entries) {
+      if (entry.deleted) {
+        this._entries.delete(key);
+      }
     }
-    return count;
   }
 
   forEach(cb: (value: V, key: string) => void): void {
@@ -141,6 +153,9 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
       if (existing && setOp.clock <= existing.clock) {
         return false;
       }
+      if (!existing || existing.deleted) {
+        this._liveCount++;
+      }
       const value = deserializeValue(setOp.value) as V;
       if (value instanceof AbstractCrdt) {
         (value as AbstractCrdt)._attach(this._doc!, [...this._path, setOp.key], this);
@@ -156,6 +171,9 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
       if (!existing || deleteOp.clock <= existing.clock) {
         return false;
       }
+      if (!existing.deleted) {
+        this._liveCount--;
+      }
       existing.deleted = true;
       existing.clock = deleteOp.clock;
       this._immutableCache = null;
@@ -165,12 +183,16 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
     return false;
   }
 
-  static _deserialize<V>(serialized: SerializedLiveMap): LiveMap<V> {
+  static _deserialize<V>(
+    serialized: SerializedLiveMap,
+    deserialize?: (data: SerializedCrdt) => unknown
+  ): LiveMap<V> {
     const map = new LiveMap<V>();
     for (const [key, val] of Object.entries(serialized.entries)) {
-      const value = deserializeValue(val) as V;
+      const value = (deserialize ? deserialize(val) : deserializeValue(val)) as V;
       map._entries.set(key, { value, clock: 0, deleted: false });
     }
+    map._liveCount = map._entries.size;
     return map;
   }
 }

@@ -230,14 +230,16 @@ export class LiveList<T = unknown> extends AbstractCrdt {
     return lo;
   }
 
-  static _deserialize<T>(serialized: SerializedLiveList): LiveList<T> {
+  static _deserialize<T>(
+    serialized: SerializedLiveList,
+    deserialize?: (data: SerializedCrdt) => unknown
+  ): LiveList<T> {
     const list = new LiveList<T>();
-    // Items should already be sorted by position
     const sorted = [...serialized.items].sort((a, b) =>
       a.position < b.position ? -1 : a.position > b.position ? 1 : 0
     );
     for (const item of sorted) {
-      const value = deserializeValue(item.value) as T;
+      const value = (deserialize ? deserialize(item.value) : deserializeValue(item.value)) as T;
       list._items.push({ position: item.position, value, clock: 0 });
     }
     return list;

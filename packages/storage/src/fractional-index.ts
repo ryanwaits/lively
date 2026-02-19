@@ -1,6 +1,10 @@
 // Base-62 chars in ASCII order so string comparison works correctly
 const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const BASE = CHARS.length; // 62
+const CHAR_INDEX = new Map([...CHARS].map((c, i) => [c, i]));
+function charIndex(c: string): number {
+  return CHAR_INDEX.get(c) ?? 0;
+}
 
 export function generateKeyBetween(
   a: string | null,
@@ -11,16 +15,16 @@ export function generateKeyBetween(
   }
   if (a === null) {
     // Before b
-    const firstIdx = CHARS.indexOf(b![0]);
+    const firstIdx = charIndex(b![0]);
     if (firstIdx > 1) {
       return CHARS[Math.floor(firstIdx / 2)];
     }
     // Append a midpoint character
-    return b!.slice(0, -1) + CHARS[Math.floor(CHARS.indexOf(b![b!.length - 1]) / 2)];
+    return b!.slice(0, -1) + CHARS[Math.floor(charIndex(b![b!.length - 1]) / 2)];
   }
   if (b === null) {
     // After a
-    const lastIdx = CHARS.indexOf(a[a.length - 1]);
+    const lastIdx = charIndex(a[a.length - 1]);
     if (lastIdx < BASE - 2) {
       const step = Math.ceil((BASE - 1 - lastIdx) / 2);
       return a.slice(0, -1) + CHARS[lastIdx + step];
@@ -37,8 +41,8 @@ function midpoint(a: string, b: string): string {
   const len = Math.max(a.length, b.length);
 
   for (let i = 0; i < len; i++) {
-    const aIdx = i < a.length ? CHARS.indexOf(a[i]) : 0;
-    const bIdx = i < b.length ? CHARS.indexOf(b[i]) : BASE;
+    const aIdx = i < a.length ? charIndex(a[i]) : 0;
+    const bIdx = i < b.length ? charIndex(b[i]) : BASE;
 
     if (aIdx === bIdx) continue;
 
@@ -50,7 +54,7 @@ function midpoint(a: string, b: string): string {
 
     // Difference is 1 — need to go deeper
     // Take the a char and find midpoint in next position
-    const nextAIdx = i + 1 < a.length ? CHARS.indexOf(a[i + 1]) : 0;
+    const nextAIdx = i + 1 < a.length ? charIndex(a[i + 1]) : 0;
     const mid = Math.floor((nextAIdx + BASE) / 2);
     if (mid > nextAIdx) {
       return a.slice(0, i + 1) + CHARS[mid];
