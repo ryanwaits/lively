@@ -1,0 +1,25 @@
+{
+  "name": "@waits/openblocks-storage",
+  "version": "0.0.1",
+  "description": "CRDT storage types for OpenBlocks real-time collaboration",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@waits/openblocks-types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
