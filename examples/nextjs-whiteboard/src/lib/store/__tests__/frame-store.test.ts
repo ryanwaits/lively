@@ -1,4 +1,5 @@
 import { describe, expect, test, beforeEach } from "bun:test";
+import "../../../../tests/helpers/setup";
 import { useFrameStore } from "../frame-store";
 import { makeFrame } from "../../../../tests/helpers/factory";
 
