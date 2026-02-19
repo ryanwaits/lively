@@ -14,7 +14,7 @@ node_modules
 /coverage
 
 # next.js
-/.next/
+.next/
 /out/
 
 # production
@@ -36,7 +36,7 @@ yarn-error.log*
 # plans / scratch
 tmp/
 
-# partykit
+# partykit (legacy)
 .partykit/
 
 # vercel
@@ -53,3 +53,4 @@ packages/*/dist/
 
 plans/*
 logs/*
+research/*
