@@ -4,13 +4,14 @@ import type { LamportClock } from "./clock.js";
 export interface StorageDocumentHost {
   _onLocalOp(op: StorageOp): void;
   _clock: LamportClock;
+  _deserializeValue(data: SerializedCrdt): unknown;
 }
 
 export abstract class AbstractCrdt {
   _path: string[] = [];
   _parent: AbstractCrdt | null = null;
   _doc: StorageDocumentHost | null = null;
-  _subscribers = new Set<() => void>();
+  _subscribers: Set<() => void> = new Set<() => void>();
 
   abstract _serialize(): SerializedCrdt;
   abstract _applyOp(op: StorageOp): boolean;

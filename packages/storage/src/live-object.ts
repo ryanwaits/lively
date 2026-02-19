@@ -96,7 +96,7 @@ export class LiveObject<
       if (existing && setOp.clock <= existing.clock) {
         return false;
       }
-      const value = deserializeValue(setOp.value);
+      const value = this._doc ? this._doc._deserializeValue(setOp.value) : deserializeValue(setOp.value);
       if (value instanceof AbstractCrdt) {
         value._attach(this._doc!, [...this._path, setOp.key], this);
       }

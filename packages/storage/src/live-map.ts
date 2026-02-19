@@ -156,7 +156,7 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
       if (!existing || existing.deleted) {
         this._liveCount++;
       }
-      const value = deserializeValue(setOp.value) as V;
+      const value = (this._doc ? this._doc._deserializeValue(setOp.value) : deserializeValue(setOp.value)) as V;
       if (value instanceof AbstractCrdt) {
         (value as AbstractCrdt)._attach(this._doc!, [...this._path, setOp.key], this);
       }

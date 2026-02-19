@@ -18,7 +18,7 @@ interface Subscription {
 }
 
 export class StorageDocument implements StorageDocumentHost {
-  _clock = new LamportClock();
+  _clock: LamportClock = new LamportClock();
   private _root: LiveObject;
   private _subscriptions = new Set<Subscription>();
   private _onOpsGenerated: ((ops: StorageOp[]) => void) | null = null;
@@ -131,6 +131,10 @@ export class StorageDocument implements StorageDocumentHost {
 
   setOnOpsGenerated(cb: (ops: StorageOp[]) => void): void {
     this._onOpsGenerated = cb;
+  }
+
+  _deserializeValue(data: SerializedCrdt): unknown {
+    return deserializeCrdt(data);
   }
 
   /** Walk the CRDT tree and notify deep subscriptions */
