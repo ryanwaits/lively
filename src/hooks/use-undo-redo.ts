@@ -1,15 +1,15 @@
 import { useCallback } from "react";
 import { useUndoStore } from "@/lib/store/undo-store";
-import { useBoardStore } from "@/lib/store/board-store";
-import { broadcastObjectCreate, broadcastObjectUpdate, broadcastObjectDelete } from "@/lib/sync/broadcast";
-import type { ClientMessage } from "@/types/messages";
+import type { BoardObject } from "@/types/board";
 import type { UndoEntry } from "@/types/undo";
 
-type SendFn = (msg: ClientMessage) => void;
+interface MutationFns {
+  createObject: (obj: BoardObject) => void;
+  updateObject: (obj: BoardObject) => void;
+  deleteObject: (id: string) => void;
+}
 
-export function useUndoRedo(sendMessage: SendFn) {
-  const { addObject, updateObject, deleteObject } = useBoardStore();
-
+export function useUndoRedo(mutations: MutationFns) {
   const recordAction = useCallback(
     (entry: UndoEntry) => {
       useUndoStore.getState().push(entry);
@@ -21,58 +21,46 @@ export function useUndoRedo(sendMessage: SendFn) {
     (entry: UndoEntry) => {
       switch (entry.type) {
         case "create":
-          // Undo create = delete
           for (const obj of entry.objects) {
-            deleteObject(obj.id);
-            broadcastObjectDelete(sendMessage, obj.id);
+            mutations.deleteObject(obj.id);
           }
           break;
         case "delete":
-          // Undo delete = re-create
           for (const obj of entry.objects) {
-            addObject(obj);
-            broadcastObjectCreate(sendMessage, obj);
+            mutations.createObject(obj);
           }
           break;
         case "update":
-          // Undo update = restore before
           for (const obj of entry.before) {
-            updateObject(obj);
-            broadcastObjectUpdate(sendMessage, obj, false);
+            mutations.updateObject(obj);
           }
           break;
       }
     },
-    [sendMessage, addObject, updateObject, deleteObject]
+    [mutations]
   );
 
   const applyForward = useCallback(
     (entry: UndoEntry) => {
       switch (entry.type) {
         case "create":
-          // Redo create = re-create
           for (const obj of entry.objects) {
-            addObject(obj);
-            broadcastObjectCreate(sendMessage, obj);
+            mutations.createObject(obj);
           }
           break;
         case "delete":
-          // Redo delete = delete again
           for (const obj of entry.objects) {
-            deleteObject(obj.id);
-            broadcastObjectDelete(sendMessage, obj.id);
+            mutations.deleteObject(obj.id);
           }
           break;
         case "update":
-          // Redo update = restore after
           for (const obj of entry.after) {
-            updateObject(obj);
-            broadcastObjectUpdate(sendMessage, obj, false);
+            mutations.updateObject(obj);
           }
           break;
       }
     },
-    [sendMessage, addObject, updateObject, deleteObject]
+    [mutations]
   );
 
   const undo = useCallback(() => {

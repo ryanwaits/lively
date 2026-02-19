@@ -1,3 +1,5 @@
+import type { Room, LiveObject, LiveMap } from "@waits/openblocks-client";
+import { LiveObject as LO } from "@waits/openblocks-storage";
 import type { BoardObject } from "@/types/board";
 import { serializeBoardState } from "./system-prompt";
 import { computeEdgePoint, computeLineBounds } from "@/lib/geometry/edge-intersection";
@@ -8,10 +10,8 @@ export interface ExecutorContext {
   userId: string;
   displayName: string;
   objects: BoardObject[];
-  partyKitBaseUrl: string;
-  aiSecret: string;
-  supabaseUrl: string;
-  supabaseServiceRoleKey: string;
+  room: Room;
+  objectsMap: LiveMap<LiveObject>;
 }
 
 interface ToolResult {
@@ -45,70 +45,36 @@ function makeObject(
   };
 }
 
-async function persistToSupabase(ctx: ExecutorContext, obj: BoardObject): Promise<void> {
-  try {
-    const res = await fetch(`${ctx.supabaseUrl}/rest/v1/board_objects`, {
-      method: "POST",
-      headers: {
-        apikey: ctx.supabaseServiceRoleKey,
-        Authorization: `Bearer ${ctx.supabaseServiceRoleKey}`,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates",
-      },
-      body: JSON.stringify(obj),
-    });
-    if (!res.ok) {
-      console.error(`persistToSupabase failed (${res.status}):`, await res.text());
-    }
-  } catch (e) {
-    console.error("Failed to persist to Supabase:", e);
+function boardObjectToLiveData(obj: BoardObject): Record<string, unknown> {
+  const data: Record<string, unknown> = { ...obj };
+  if (obj.points) {
+    data.points = JSON.stringify(obj.points);
   }
+  return data;
 }
 
-async function deleteFromSupabase(ctx: ExecutorContext, objectId: string): Promise<void> {
-  try {
-    const res = await fetch(
-      `${ctx.supabaseUrl}/rest/v1/board_objects?id=eq.${objectId}`,
-      {
-        method: "DELETE",
-        headers: {
-          apikey: ctx.supabaseServiceRoleKey,
-          Authorization: `Bearer ${ctx.supabaseServiceRoleKey}`,
-        },
-      }
-    );
-    if (!res.ok) {
-      console.error(`deleteFromSupabase failed (${res.status}):`, await res.text());
-    }
-  } catch (e) {
-    console.error("Failed to delete from Supabase:", e);
-  }
+function crdtCreate(ctx: ExecutorContext, obj: BoardObject) {
+  ctx.room.batch(() => {
+    ctx.objectsMap.set(obj.id, new LO(boardObjectToLiveData(obj)));
+  });
+  ctx.objects.push(obj);
 }
 
-async function postToPartyKit(
-  ctx: ExecutorContext,
-  actions: Array<{ type: "create" | "update" | "delete"; object?: BoardObject; objectId?: string }>
-): Promise<void> {
-  const url = `${ctx.partyKitBaseUrl}/parties/main/${ctx.boardId}`;
-  try {
-    console.log("[AI] POST to PartyKit:", url);
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${ctx.aiSecret}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ actions }),
-    });
-    if (!res.ok) {
-      const body = await res.text();
-      console.error(`[AI] PartyKit POST failed (${res.status}):`, body);
-    } else {
-      console.log("[AI] PartyKit POST success:", await res.json());
+function crdtUpdate(ctx: ExecutorContext, obj: BoardObject) {
+  ctx.room.batch(() => {
+    const existing = ctx.objectsMap.get(obj.id);
+    if (existing) {
+      existing.update(boardObjectToLiveData(obj));
     }
-  } catch (e) {
-    console.error("[AI] Failed to POST to PartyKit:", e);
-  }
+  });
+}
+
+function crdtDelete(ctx: ExecutorContext, objectId: string) {
+  ctx.room.batch(() => {
+    ctx.objectsMap.delete(objectId);
+  });
+  const idx = ctx.objects.findIndex((o) => o.id === objectId);
+  if (idx !== -1) ctx.objects.splice(idx, 1);
 }
 
 export async function executeToolCall(
@@ -125,9 +91,7 @@ export async function executeToolCall(
         color: (toolInput.color as string) || "#fef08a",
         text: (toolInput.text as string) || "",
       });
-      await persistToSupabase(ctx, obj);
-      await postToPartyKit(ctx, [{ type: "create", object: obj }]);
-      ctx.objects.push(obj);
+      crdtCreate(ctx, obj);
       return { result: `Created sticky note "${obj.text}" (id: ${obj.id})`, objects: [obj] };
     }
 
@@ -155,9 +119,7 @@ export async function executeToolCall(
         color: (toolInput.color as string) || defaults.color,
         text: (toolInput.text as string) || "",
       });
-      await persistToSupabase(ctx, obj);
-      await postToPartyKit(ctx, [{ type: "create", object: obj }]);
-      ctx.objects.push(obj);
+      crdtCreate(ctx, obj);
       return { result: `Created ${shapeType} (id: ${obj.id})`, objects: [obj] };
     }
 
@@ -167,8 +129,7 @@ export async function executeToolCall(
       obj.x = toolInput.x as number;
       obj.y = toolInput.y as number;
       obj.updated_at = new Date().toISOString();
-      await persistToSupabase(ctx, obj);
-      await postToPartyKit(ctx, [{ type: "update", object: obj }]);
+      crdtUpdate(ctx, obj);
       return { result: `Moved object ${obj.id} to (${obj.x}, ${obj.y})` };
     }
 
@@ -178,8 +139,7 @@ export async function executeToolCall(
       obj.width = toolInput.width as number;
       obj.height = toolInput.height as number;
       obj.updated_at = new Date().toISOString();
-      await persistToSupabase(ctx, obj);
-      await postToPartyKit(ctx, [{ type: "update", object: obj }]);
+      crdtUpdate(ctx, obj);
       return { result: `Resized object ${obj.id} to ${obj.width}x${obj.height}` };
     }
 
@@ -188,8 +148,7 @@ export async function executeToolCall(
       if (!obj) return { result: `Error: object ${toolInput.objectId} not found` };
       obj.text = toolInput.newText as string;
       obj.updated_at = new Date().toISOString();
-      await persistToSupabase(ctx, obj);
-      await postToPartyKit(ctx, [{ type: "update", object: obj }]);
+      crdtUpdate(ctx, obj);
       return { result: `Updated text of ${obj.id}` };
     }
 
@@ -198,8 +157,7 @@ export async function executeToolCall(
       if (!obj) return { result: `Error: object ${toolInput.objectId} not found` };
       obj.color = toolInput.color as string;
       obj.updated_at = new Date().toISOString();
-      await persistToSupabase(ctx, obj);
-      await postToPartyKit(ctx, [{ type: "update", object: obj }]);
+      crdtUpdate(ctx, obj);
       return { result: `Changed color of ${obj.id} to ${obj.color}` };
     }
 
@@ -209,7 +167,6 @@ export async function executeToolCall(
       const fromPoint = toolInput.fromPoint as { x: number; y: number } | undefined;
       const toPoint = toolInput.toPoint as { x: number; y: number } | undefined;
 
-      // Resolve start point
       let startPt: { x: number; y: number };
       const fromObj = fromId ? ctx.objects.find((o) => o.id === fromId) : undefined;
       if (fromObj) {
@@ -220,7 +177,6 @@ export async function executeToolCall(
         return { result: "Error: must provide fromObjectId or fromPoint" };
       }
 
-      // Resolve end point
       let endPt: { x: number; y: number };
       const toObj = toId ? ctx.objects.find((o) => o.id === toId) : undefined;
       if (toObj) {
@@ -231,7 +187,6 @@ export async function executeToolCall(
         return { result: "Error: must provide toObjectId or toPoint" };
       }
 
-      // Compute edge intersection if connecting to objects
       const resolvedStart = fromObj ? computeEdgePoint(fromObj, endPt) : startPt;
       const resolvedEnd = toObj ? computeEdgePoint(toObj, resolvedStart) : endPt;
 
@@ -259,18 +214,14 @@ export async function executeToolCall(
       obj.end_object_id = toId || null;
       if (label) obj.label = label;
 
-      await persistToSupabase(ctx, obj);
-      await postToPartyKit(ctx, [{ type: "create", object: obj }]);
-      ctx.objects.push(obj);
+      crdtCreate(ctx, obj);
       return { result: `Created connector (id: ${obj.id})${fromId ? ` from ${fromId}` : ""}${toId ? ` to ${toId}` : ""}`, objects: [obj] };
     }
 
     case "deleteObject": {
       const idx = ctx.objects.findIndex((o) => o.id === toolInput.objectId);
       if (idx === -1) return { result: `Error: object ${toolInput.objectId} not found` };
-      await deleteFromSupabase(ctx, toolInput.objectId as string);
-      await postToPartyKit(ctx, [{ type: "delete", objectId: toolInput.objectId as string }]);
-      ctx.objects.splice(idx, 1);
+      crdtDelete(ctx, toolInput.objectId as string);
       return { result: `Deleted object ${toolInput.objectId}` };
     }
 

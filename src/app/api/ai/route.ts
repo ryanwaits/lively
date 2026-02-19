@@ -1,4 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { OpenBlocksClient, type Room, type LiveObject, type LiveMap } from "@waits/openblocks-client";
+import WebSocket from "ws";
 import { AI_TOOLS } from "@/lib/ai/tools";
 import { SYSTEM_PROMPT, serializeBoardState, serializeFrameState } from "@/lib/ai/system-prompt";
 import { executeToolCall, type ExecutorContext } from "@/lib/ai/executor";
@@ -26,6 +28,19 @@ function checkRateLimit(userId: string): { allowed: boolean; retryAfterSec?: num
   return { allowed: true };
 }
 
+function liveObjectToBoardObject(lo: LiveObject): BoardObject {
+  const raw = lo.toObject();
+  const obj = { ...raw } as unknown as BoardObject;
+  if (typeof obj.points === "string") {
+    try { obj.points = JSON.parse(obj.points as unknown as string); } catch { obj.points = undefined; }
+  }
+  return obj;
+}
+
+function liveObjectToFrame(lo: LiveObject): Frame {
+  return lo.toObject() as unknown as Frame;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -51,60 +66,55 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const aiSecret = process.env.AI_SECRET;
-    const partyKitHost = process.env.NEXT_PUBLIC_PARTYKIT_HOST;
+    const serverUrl = process.env.OPENBLOCKS_SERVER_URL || "http://localhost:1999";
 
-    if (!supabaseUrl || !supabaseServiceRoleKey || !aiSecret || !partyKitHost) {
-      return Response.json({ error: "Server misconfigured — missing env vars" }, { status: 500 });
-    }
+    // Create temporary OpenBlocks client with Node.js ws
+    const client = new OpenBlocksClient({
+      serverUrl,
+      WebSocket: WebSocket as unknown as { new (url: string): globalThis.WebSocket },
+      reconnect: false,
+    });
 
-    const partyKitBaseUrl = partyKitHost.includes("localhost")
-      ? `http://${partyKitHost}`
-      : partyKitHost.startsWith("http")
-        ? partyKitHost
-        : `https://${partyKitHost}`;
+    const room = client.joinRoom(boardId, {
+      userId: `ai-${userId}`,
+      displayName: `AI (${displayName})`,
+    });
 
-    // Resolve board UUID
-    const boardUUID = boardId === "default" ? "00000000-0000-0000-0000-000000000000" : boardId;
-
-    // Fetch board state from Supabase
-    const stateRes = await fetch(
-      `${supabaseUrl}/rest/v1/board_objects?board_id=eq.${boardUUID}&select=*`,
-      {
-        headers: {
-          apikey: supabaseServiceRoleKey,
-          Authorization: `Bearer ${supabaseServiceRoleKey}`,
-        },
-      }
-    );
-    if (!stateRes.ok) {
-      return Response.json({ error: "Failed to fetch board state" }, { status: 500 });
-    }
-    const objects: BoardObject[] = await stateRes.json();
-
-    // Fetch frames from boards table
-    let frames: Frame[] = [];
+    // Wait for storage with timeout
+    let storage: { root: LiveObject };
     try {
-      const framesRes = await fetch(
-        `${supabaseUrl}/rest/v1/boards?id=eq.${boardUUID}&select=frames`,
-        {
-          headers: {
-            apikey: supabaseServiceRoleKey,
-            Authorization: `Bearer ${supabaseServiceRoleKey}`,
-          },
-        }
-      );
-      if (framesRes.ok) {
-        const boards = await framesRes.json();
-        if (boards.length > 0 && Array.isArray(boards[0].frames)) {
-          frames = boards[0].frames;
-        }
-      }
+      storage = await Promise.race([
+        room.getStorage(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Storage timeout")), 5000)
+        ),
+      ]);
     } catch {
-      // frames fetch is best-effort
+      client.leaveRoom(boardId);
+      return Response.json({ error: "Failed to connect to board server" }, { status: 503 });
     }
+
+    const { root } = storage;
+    const objectsMap = root.get("objects") as LiveMap<LiveObject>;
+    const framesMap = root.get("frames") as LiveMap<LiveObject> | undefined;
+
+    // Read current objects from CRDT
+    const objects: BoardObject[] = [];
+    if (objectsMap) {
+      objectsMap.forEach((lo: LiveObject) => {
+        objects.push(liveObjectToBoardObject(lo));
+      });
+    }
+
+    // Read frames from CRDT
+    const frames: Frame[] = [];
+    if (framesMap) {
+      framesMap.forEach((lo: LiveObject) => {
+        frames.push(liveObjectToFrame(lo));
+      });
+    }
+
+    const boardUUID = boardId === "default" ? "00000000-0000-0000-0000-000000000000" : boardId;
 
     const ctx: ExecutorContext = {
       boardId,
@@ -112,10 +122,8 @@ export async function POST(request: Request) {
       userId,
       displayName,
       objects,
-      partyKitBaseUrl,
-      aiSecret,
-      supabaseUrl,
-      supabaseServiceRoleKey,
+      room,
+      objectsMap,
     };
 
     // Build user message with board state + selection context
@@ -131,7 +139,6 @@ export async function POST(request: Request) {
     // Build messages with conversation history for multi-turn context
     const messages: Anthropic.MessageParam[] = [];
     if (history && history.length > 0) {
-      // Keep last 20 messages to avoid token bloat
       const recent = history.slice(-20);
       for (const msg of recent) {
         messages.push({ role: msg.role === "assistant" ? "assistant" : "user", content: msg.content });
@@ -191,6 +198,9 @@ export async function POST(request: Request) {
         textResponse += block.text;
       }
     }
+
+    // Disconnect AI client
+    client.leaveRoom(boardId);
 
     return Response.json({ reply: textResponse, objectsCreated, objectsModified });
   } catch (e: unknown) {
