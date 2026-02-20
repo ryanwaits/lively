@@ -211,4 +211,175 @@ describe("StorageDocument", () => {
     newInner.set("val", 100);
     expect(fired).toBe(2);
   });
+
+  // --- Undo/Redo (T14a) ---
+
+  describe("undo/redo", () => {
+    it("LiveObject set → undo reverts value", () => {
+      const root = new LiveObject<{ name: string }>({ name: "alice" });
+      const doc = new StorageDocument(root);
+
+      root.set("name", "bob");
+      expect(root.get("name")).toBe("bob");
+
+      const history = doc.getHistory();
+      expect(history.canUndo()).toBe(true);
+      const inverseOps = history.undo()!;
+      doc.applyLocalOps(inverseOps);
+      expect(root.get("name")).toBe("alice");
+    });
+
+    it("LiveObject set → undo → redo restores value", () => {
+      const root = new LiveObject<{ name: string }>({ name: "alice" });
+      const doc = new StorageDocument(root);
+
+      root.set("name", "bob");
+      const history = doc.getHistory();
+      const inverseOps = history.undo()!;
+      doc.applyLocalOps(inverseOps);
+      expect(root.get("name")).toBe("alice");
+
+      const redoOps = history.redo()!;
+      doc.applyLocalOps(redoOps);
+      expect(root.get("name")).toBe("bob");
+    });
+
+    it("LiveObject set new field → undo deletes it", () => {
+      const root = new LiveObject<{ x?: number }>({});
+      const doc = new StorageDocument(root);
+
+      root.set("x", 42);
+      expect(root.get("x")).toBe(42);
+
+      const history = doc.getHistory();
+      const inverseOps = history.undo()!;
+      doc.applyLocalOps(inverseOps);
+      expect(root.get("x")).toBeUndefined();
+    });
+
+    it("batch groups into single undo entry", () => {
+      const root = new LiveObject<{ a: number; b: number }>({ a: 1, b: 2 });
+      const doc = new StorageDocument(root);
+      const history = doc.getHistory();
+
+      history.startBatch();
+      root.set("a", 10);
+      root.set("b", 20);
+      history.endBatch();
+
+      expect(root.get("a")).toBe(10);
+      expect(root.get("b")).toBe(20);
+
+      const inverseOps = history.undo()!;
+      doc.applyLocalOps(inverseOps);
+      expect(root.get("a")).toBe(1);
+      expect(root.get("b")).toBe(2);
+      expect(history.canUndo()).toBe(false);
+    });
+
+    it("undo does not re-record in history", () => {
+      const root = new LiveObject<{ x: number }>({ x: 0 });
+      const doc = new StorageDocument(root);
+      const history = doc.getHistory();
+
+      root.set("x", 1);
+      root.set("x", 2);
+      expect(history.canUndo()).toBe(true);
+
+      // Undo last op
+      doc.applyLocalOps(history.undo()!);
+      // Should not have pushed a new undo entry for the undo itself
+      expect(history.canRedo()).toBe(true);
+    });
+
+    it("applyLocalOps sends ops to network callback", () => {
+      const root = new LiveObject<{ x: number }>({ x: 0 });
+      const doc = new StorageDocument(root);
+      const sent: any[] = [];
+      doc.setOnOpsGenerated((ops) => sent.push(...ops));
+
+      root.set("x", 1);
+      sent.length = 0; // clear the initial set op
+
+      const history = doc.getHistory();
+      const inverseOps = history.undo()!;
+      doc.applyLocalOps(inverseOps);
+      expect(sent.length).toBeGreaterThan(0);
+      expect(sent[0].type).toBe("set");
+    });
+
+    // --- LiveMap undo/redo ---
+
+    it("LiveMap set → undo reverts", () => {
+      const map = new LiveMap<number>();
+      const root = new LiveObject({ map });
+      const doc = new StorageDocument(root);
+
+      map.set("key", 10);
+      map.set("key", 20);
+      expect(map.get("key")).toBe(20);
+
+      const history = doc.getHistory();
+      doc.applyLocalOps(history.undo()!);
+      expect(map.get("key")).toBe(10);
+
+      doc.applyLocalOps(history.undo()!);
+      expect(map.has("key")).toBe(false);
+    });
+
+    it("LiveMap delete → undo restores", () => {
+      const map = new LiveMap<number>();
+      const root = new LiveObject({ map });
+      const doc = new StorageDocument(root);
+
+      map.set("key", 42);
+      map.delete("key");
+      expect(map.has("key")).toBe(false);
+
+      const history = doc.getHistory();
+      doc.applyLocalOps(history.undo()!); // undo delete
+      expect(map.get("key")).toBe(42);
+    });
+
+    // --- LiveList undo/redo ---
+
+    it("LiveList push → undo removes item", () => {
+      const list = new LiveList<string>();
+      const root = new LiveObject({ list });
+      const doc = new StorageDocument(root);
+
+      list.push("hello");
+      expect(list.toArray()).toEqual(["hello"]);
+
+      const history = doc.getHistory();
+      doc.applyLocalOps(history.undo()!);
+      expect(list.toArray()).toEqual([]);
+    });
+
+    it("LiveList delete → undo restores item", () => {
+      const list = new LiveList<string>(["a", "b", "c"]);
+      const root = new LiveObject({ list });
+      const doc = new StorageDocument(root);
+
+      list.delete(1); // remove "b"
+      expect(list.toArray()).toEqual(["a", "c"]);
+
+      const history = doc.getHistory();
+      doc.applyLocalOps(history.undo()!);
+      expect(list.toArray()).toEqual(["a", "b", "c"]);
+    });
+
+    it("LiveList move → undo reverts position", () => {
+      const list = new LiveList<string>(["a", "b", "c"]);
+      const root = new LiveObject({ list });
+      const doc = new StorageDocument(root);
+
+      list.move(0, 2); // move "a" after "c"
+      expect(list.toArray()).toEqual(["b", "c", "a"]);
+
+      const history = doc.getHistory();
+      doc.applyLocalOps(history.undo()!);
+      expect(list.toArray()).toEqual(["a", "b", "c"]);
+    });
+  });
 });

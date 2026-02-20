@@ -40,6 +40,27 @@ export class LiveObject<
     const clock = this._doc ? this._doc._clock.tick() : 0;
     const k = key as string;
 
+    // Capture inverse before mutation
+    if (this._doc?._captureInverse) {
+      const existing = this._fields.get(k);
+      if (existing) {
+        this._doc._captureInverse({
+          type: "set",
+          path: this._path,
+          key: k,
+          value: serializeValue(existing.value),
+          clock: existing.clock,
+        });
+      } else {
+        this._doc._captureInverse({
+          type: "delete",
+          path: this._path,
+          key: k,
+          clock: 0,
+        });
+      }
+    }
+
     // Register child CRDT
     if (value instanceof AbstractCrdt) {
       value._attach(this._doc!, [...this._path, k], this);

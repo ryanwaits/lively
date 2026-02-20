@@ -10,6 +10,7 @@ import { LamportClock } from "./clock.js";
 import { LiveObject } from "./live-object.js";
 import { LiveMap } from "./live-map.js";
 import { LiveList } from "./live-list.js";
+import { HistoryManager, type HistoryConfig } from "./history.js";
 
 interface Subscription {
   target: AbstractCrdt;
@@ -22,9 +23,12 @@ export class StorageDocument implements StorageDocumentHost {
   private _root: LiveObject;
   private _subscriptions = new Set<Subscription>();
   private _onOpsGenerated: ((ops: StorageOp[]) => void) | null = null;
+  _history: HistoryManager;
+  _pendingInverse: StorageOp | null = null;
 
-  constructor(root: LiveObject) {
+  constructor(root: LiveObject, historyConfig?: HistoryConfig) {
     this._root = root;
+    this._history = new HistoryManager(historyConfig);
     this._attachTree(root, []);
   }
 
@@ -121,12 +125,53 @@ export class StorageDocument implements StorageDocumentHost {
     };
   }
 
+  _captureInverse(op: StorageOp): void {
+    this._pendingInverse = op;
+  }
+
   _onLocalOp(op: StorageOp): void {
+    // Record history if not paused
+    if (this._pendingInverse) {
+      this._history.record(op, this._pendingInverse);
+      this._pendingInverse = null;
+    }
+
     // Op is already stamped by the set/delete method via _clock.tick().
     // Don't re-stamp — this prevents echoed ops from re-applying locally.
     if (this._onOpsGenerated) {
       this._onOpsGenerated([op]);
     }
+  }
+
+  getHistory(): HistoryManager {
+    return this._history;
+  }
+
+  /**
+   * Apply ops locally with fresh clocks (used by undo/redo).
+   * Pauses history recording to prevent re-recording during replay.
+   */
+  applyLocalOps(ops: StorageOp[]): StorageOp[] {
+    this._history.pause();
+    const reclockedOps: StorageOp[] = [];
+    try {
+      for (const op of ops) {
+        const clock = this._clock.tick();
+        const reclocked = { ...op, clock };
+        const target = this._resolveTarget(reclocked);
+        if (target) {
+          target._applyOp(reclocked);
+        }
+        reclockedOps.push(reclocked);
+      }
+      // Flush reclocked ops to network
+      if (reclockedOps.length > 0 && this._onOpsGenerated) {
+        this._onOpsGenerated(reclockedOps);
+      }
+    } finally {
+      this._history.resume();
+    }
+    return reclockedOps;
   }
 
   setOnOpsGenerated(cb: (ops: StorageOp[]) => void): void {

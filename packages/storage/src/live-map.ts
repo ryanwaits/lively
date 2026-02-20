@@ -41,6 +41,27 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
   set(key: string, value: V): void {
     const clock = this._doc ? this._doc._clock.tick() : 0;
 
+    // Capture inverse before mutation
+    if (this._doc?._captureInverse) {
+      const existing = this._entries.get(key);
+      if (existing && !existing.deleted) {
+        this._doc._captureInverse({
+          type: "set",
+          path: this._path,
+          key,
+          value: serializeValue(existing.value),
+          clock: existing.clock,
+        });
+      } else {
+        this._doc._captureInverse({
+          type: "delete",
+          path: this._path,
+          key,
+          clock: 0,
+        });
+      }
+    }
+
     if (value instanceof AbstractCrdt) {
       (value as AbstractCrdt)._attach(this._doc!, [...this._path, key], this);
     }
@@ -67,6 +88,17 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
   delete(key: string): void {
     const entry = this._entries.get(key);
     if (!entry || entry.deleted) return;
+
+    // Capture inverse before mutation
+    if (this._doc?._captureInverse) {
+      this._doc._captureInverse({
+        type: "set",
+        path: this._path,
+        key,
+        value: serializeValue(entry.value),
+        clock: entry.clock,
+      });
+    }
 
     const clock = this._doc ? this._doc._clock.tick() : 0;
     entry.deleted = true;

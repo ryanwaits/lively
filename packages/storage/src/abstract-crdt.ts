@@ -3,6 +3,7 @@ import type { LamportClock } from "./clock.js";
 
 export interface StorageDocumentHost {
   _onLocalOp(op: StorageOp): void;
+  _captureInverse?(op: StorageOp): void;
   _clock: LamportClock;
   _deserializeValue(data: SerializedCrdt): unknown;
 }

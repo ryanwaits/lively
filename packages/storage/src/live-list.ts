@@ -54,6 +54,17 @@ export class LiveList<T = unknown> extends AbstractCrdt {
     const entry = this._items[index];
     if (!entry) return;
 
+    // Capture inverse before mutation
+    if (this._doc?._captureInverse) {
+      this._doc._captureInverse({
+        type: "list-insert",
+        path: this._path,
+        position: entry.position,
+        value: serializeValue(entry.value),
+        clock: 0,
+      });
+    }
+
     const clock = this._doc ? this._doc._clock.tick() : 0;
     this._items.splice(index, 1);
     this._immutableCache = null;
@@ -74,6 +85,9 @@ export class LiveList<T = unknown> extends AbstractCrdt {
 
     const clock = this._doc ? this._doc._clock.tick() : 0;
 
+    // Capture old position for inverse before we compute new
+    const oldPosition = entry.position;
+
     // Remove from old position
     this._items.splice(from, 1);
 
@@ -88,10 +102,21 @@ export class LiveList<T = unknown> extends AbstractCrdt {
     this._items.splice(adjustedTo, 0, newEntry);
     this._immutableCache = null;
 
+    // Capture inverse: move(newPosition → oldPosition)
+    if (this._doc?._captureInverse) {
+      this._doc._captureInverse({
+        type: "list-move",
+        path: this._path,
+        fromPosition: newPosition,
+        toPosition: oldPosition,
+        clock: 0,
+      });
+    }
+
     const op: ListMoveOp = {
       type: "list-move",
       path: this._path,
-      fromPosition: entry.position,
+      fromPosition: oldPosition,
       toPosition: newPosition,
       clock,
     };
@@ -195,6 +220,16 @@ export class LiveList<T = unknown> extends AbstractCrdt {
 
   private _insertAt(position: string, item: T): void {
     const clock = this._doc ? this._doc._clock.tick() : 0;
+
+    // Capture inverse before mutation
+    if (this._doc?._captureInverse) {
+      this._doc._captureInverse({
+        type: "list-delete",
+        path: this._path,
+        position,
+        clock: 0,
+      });
+    }
 
     if (item instanceof AbstractCrdt) {
       (item as AbstractCrdt)._attach(this._doc!, [...this._path, position], this);

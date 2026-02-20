@@ -6,3 +6,7 @@ export { LiveMap } from "./live-map.js";
 export { LiveList } from "./live-list.js";
 export { StorageDocument, deserializeCrdt } from "./storage-document.js";
 export { generateKeyBetween, generateNKeysBetween } from "./fractional-index.js";
+export { computeInverseOp } from "./inverse.js";
+export type { FieldSnapshot } from "./inverse.js";
+export { HistoryManager } from "./history.js";
+export type { HistoryEntry, HistoryConfig } from "./history.js";
