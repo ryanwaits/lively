@@ -1,6 +1,8 @@
 import { useSyncExternalStore, useCallback, useEffect, useRef } from "react";
 import type { ConnectionStatus } from "@waits/openblocks-types";
-import { useRoom } from "./room-context.js";
+import { useRoom, useStorageRoot } from "./room-context.js";
+
+export type SyncStatus = "synchronized" | "synchronizing" | "not-synchronized";
 
 /**
  * Returns the current WebSocket connection status of the room.
@@ -50,4 +52,40 @@ export function useLostConnectionListener(
     });
     return unsub;
   }, [room]);
+}
+
+/**
+ * Returns a high-level sync status derived from connection state and storage loading.
+ *
+ * - `"synchronized"` — connected and storage loaded
+ * - `"synchronizing"` — connected but storage loading, or reconnecting/connecting
+ * - `"not-synchronized"` — disconnected
+ *
+ * @example
+ * const sync = useSyncStatus();
+ * if (sync === "not-synchronized") return <OfflineBanner />;
+ */
+export function useSyncStatus(): SyncStatus {
+  const room = useRoom();
+  const storage = useStorageRoot();
+  const cache = useRef<SyncStatus>("synchronizing");
+
+  return useSyncExternalStore(
+    useCallback((cb) => room.subscribe("status", () => cb()), [room]),
+    useCallback(() => {
+      const connStatus = room.getStatus();
+      let next: SyncStatus;
+      if (connStatus === "disconnected") {
+        next = "not-synchronized";
+      } else if (connStatus === "connected" && storage !== null) {
+        next = "synchronized";
+      } else {
+        next = "synchronizing";
+      }
+      if (cache.current === next) return cache.current;
+      cache.current = next;
+      return next;
+    }, [room, storage]),
+    () => "not-synchronized" as SyncStatus
+  );
 }

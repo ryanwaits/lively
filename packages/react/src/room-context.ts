@@ -12,7 +12,7 @@ import type { Room } from "@waits/openblocks-client";
 import type { LiveObject } from "@waits/openblocks-client";
 import { useClient } from "./client-context.js";
 
-const RoomContext = createContext<Room | null>(null);
+export const RoomContext = createContext<Room | null>(null);
 const StorageContext: Context<{ root: LiveObject } | null> = createContext<{ root: LiveObject } | null>(null);
 
 export { StorageContext };
@@ -136,6 +136,14 @@ export function useRoom(): Room {
     throw new Error("useRoom must be used within a <RoomProvider>");
   }
   return room;
+}
+
+/**
+ * Returns `true` when called inside a `<RoomProvider>`, `false` otherwise.
+ * Useful for conditional rendering or guarding hook usage.
+ */
+export function useIsInsideRoom(): boolean {
+  return useContext(RoomContext) !== null;
 }
 
 /**

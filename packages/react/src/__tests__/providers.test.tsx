@@ -107,7 +107,7 @@ const { render, act, renderHook } = await import("@testing-library/react");
 const { createElement } = await import("react");
 type ReactNode = import("react").ReactNode;
 const { OpenBlocksProvider, useClient } = await import("../client-context.js");
-const { RoomProvider, useStorageRoot } = await import("../room-context.js");
+const { RoomProvider, useStorageRoot, useIsInsideRoom } = await import("../room-context.js");
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -284,5 +284,29 @@ describe("RoomProvider", () => {
       deferredB.resolve({ root: {} as any });
     });
     expect(container.querySelector("[data-testid='storage']")!.textContent).toBe("loaded");
+  });
+});
+
+describe("useIsInsideRoom", () => {
+  it("returns false outside RoomProvider", () => {
+    const { result } = renderHook(() => useIsInsideRoom());
+    expect(result.current).toBe(false);
+  });
+
+  it("returns true inside RoomProvider", () => {
+    const c = createMockClient();
+    function wrapper({ children }: { children: any }) {
+      return createElement(
+        OpenBlocksProvider,
+        { client: c },
+        createElement(
+          RoomProvider,
+          { roomId: "r", userId: "u1", displayName: "U1" },
+          children
+        )
+      );
+    }
+    const { result } = renderHook(() => useIsInsideRoom(), { wrapper });
+    expect(result.current).toBe(true);
   });
 });
