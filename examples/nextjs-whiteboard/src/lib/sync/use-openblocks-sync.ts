@@ -5,7 +5,6 @@ import type { LiveObject, LiveMap } from "@waits/openblocks-client";
 import { useRoom, useStorageRoot } from "@waits/openblocks-react";
 import { useBoardStore } from "@/lib/store/board-store";
 import { useFrameStore } from "@/lib/store/frame-store";
-import { useUndoStore } from "@/lib/store/undo-store";
 import type { BoardObject, Frame } from "@/types/board";
 
 function shallowEqual(a: BoardObject, b: BoardObject): boolean {
@@ -68,7 +67,6 @@ export function useOpenBlocksSync(): void {
         initialSyncDone.current = true;
         syncAll(Array.from(next.values()));
         prevObjectsRef.current = next;
-        useUndoStore.getState().clear();
         return;
       }
 

@@ -1,5 +1,4 @@
 import type { BoardObject, Frame } from "../../src/types/board";
-import type { UndoEntry } from "../../src/types/undo";
 
 let counter = 0;
 function uid(): string {
@@ -43,25 +42,6 @@ export function makeFrame(overrides?: Partial<Frame>): Frame {
     label: "Frame 1",
     ...overrides,
   };
-}
-
-export function makeUndoEntry(
-  type: UndoEntry["type"],
-  overrides?: Partial<UndoEntry>
-): UndoEntry {
-  switch (type) {
-    case "create":
-      return { type: "create", objects: [makeObj()], ...overrides } as UndoEntry;
-    case "delete":
-      return { type: "delete", objects: [makeObj()], ...overrides } as UndoEntry;
-    case "update":
-      return {
-        type: "update",
-        before: [makeObj()],
-        after: [makeObj()],
-        ...overrides,
-      } as UndoEntry;
-  }
 }
 
 export function makeObjectMap(...objs: BoardObject[]): Map<string, BoardObject> {

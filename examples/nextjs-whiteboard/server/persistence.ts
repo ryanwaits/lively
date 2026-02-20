@@ -19,8 +19,12 @@ function supabaseHeaders() {
   };
 }
 
-function resolveBoardId(roomId: string): string {
-  return roomId === "default" ? "00000000-0000-0000-0000-000000000000" : roomId;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function resolveBoardId(roomId: string): string | null {
+  if (roomId === "default") return "00000000-0000-0000-0000-000000000000";
+  if (UUID_RE.test(roomId)) return roomId;
+  return null;
 }
 
 // --- Supabase fetch helpers ---
@@ -145,6 +149,10 @@ export async function buildInitialStorage(roomId: string): Promise<SerializedCrd
   }
 
   const boardUUID = resolveBoardId(roomId);
+  if (!boardUUID) {
+    console.warn(`[persistence] skipping non-UUID room "${roomId}"`);
+    return null;
+  }
   const [objects, frames] = await Promise.all([
     fetchBoardObjects(boardUUID),
     fetchBoardFrames(boardUUID),
@@ -214,6 +222,7 @@ function readCurrentState(server: OpenBlocksServer, roomId: string): { objects: 
 
 async function flushRoom(server: OpenBlocksServer, roomId: string): Promise<void> {
   const boardUUID = resolveBoardId(roomId);
+  if (!boardUUID) return;
   const current = readCurrentState(server, roomId);
   if (!current) return;
 

@@ -96,10 +96,6 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
   const multiDragStartRef = useRef<Map<string, { x: number; y: number }> | null>(null);
   const clipboardRef = useRef<BoardObject[]>([]);
   const lineDrawing = useLineDrawing();
-  const dragBeforeRef = useRef<BoardObject[] | null>(null);
-  const resizeBeforeRef = useRef<BoardObject | null>(null);
-  const rotateBeforeRef = useRef<BoardObject | null>(null);
-  const lineEditBeforeRef = useRef<BoardObject | null>(null);
 
   const selectedId = selectedIds.size === 1 ? Array.from(selectedIds)[0] : null;
 
@@ -109,7 +105,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
 
   useOpenBlocksSync();
   const mutations = useBoardMutations();
-  const { recordAction, undo, redo } = useUndoRedo(mutations);
+  const { undo, redo } = useUndoRedo();
   const applyFollowViewport = useCallback(
     (pos: { x: number; y: number }, scale: number) => canvasRef.current?.setViewport(pos, scale),
     []
@@ -194,9 +190,8 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         updated_at: new Date().toISOString(),
       };
       mutations.createObject(obj);
-      recordAction({ type: "create", objects: [obj] });
     },
-    [roomId, objects.size, userId, displayName, mutations, recordAction],
+    [roomId, objects.size, userId, displayName, mutations],
   );
 
   const finalizeLineDrawing = useCallback(() => {
@@ -204,10 +199,9 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     const obj = lineDrawing.finalize(boardUUID, userId || null, displayName || undefined, objects.size);
     if (obj) {
       mutations.createObject(obj);
-      recordAction({ type: "create", objects: [obj] });
       setActiveTool("select");
     }
-  }, [lineDrawing, roomId, userId, displayName, objects.size, mutations, recordAction]);
+  }, [lineDrawing, roomId, userId, displayName, objects.size, mutations]);
 
   const handleCanvasClick = useCallback(
     (canvasX: number, canvasY: number) => {
@@ -262,13 +256,11 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       if (selectedIds.has(objectId) && selectedIds.size > 1) {
         if (!multiDragStartRef.current) {
           const starts = new Map<string, { x: number; y: number }>();
-          const snapshots: BoardObject[] = [];
           for (const id of selectedIds) {
             const o = objects.get(id);
-            if (o) { starts.set(id, { x: o.x, y: o.y }); snapshots.push({ ...o }); }
+            if (o) { starts.set(id, { x: o.x, y: o.y }); }
           }
           multiDragStartRef.current = starts;
-          dragBeforeRef.current = snapshots;
         }
         const startPos = multiDragStartRef.current.get(objectId);
         if (!startPos) return;
@@ -284,9 +276,6 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         return;
       }
 
-      if (!dragBeforeRef.current) {
-        dragBeforeRef.current = [{ ...obj }];
-      }
       mutations.updateObject({ ...obj, x, y, updated_at: new Date().toISOString() });
     },
     [objects, selectedIds, mutations],
@@ -303,33 +292,21 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
           const dx = x - startPos.x;
           const dy = y - startPos.y;
           const now = new Date().toISOString();
-          const afterObjs: BoardObject[] = [];
           for (const id of selectedIds) {
             const o = objects.get(id);
             const sp = multiDragStartRef.current.get(id);
             if (!o || !sp) continue;
-            const updated = { ...o, x: sp.x + dx, y: sp.y + dy, updated_at: now };
-            mutations.updateObject(updated);
-            afterObjs.push(updated);
-          }
-          if (dragBeforeRef.current) {
-            recordAction({ type: "update", before: dragBeforeRef.current, after: afterObjs });
+            mutations.updateObject({ ...o, x: sp.x + dx, y: sp.y + dy, updated_at: now });
           }
         }
         multiDragStartRef.current = null;
-        dragBeforeRef.current = null;
         return;
       }
 
-      const updated = { ...obj, x, y, updated_at: new Date().toISOString() };
-      mutations.updateObject(updated);
-      if (dragBeforeRef.current) {
-        recordAction({ type: "update", before: dragBeforeRef.current, after: [updated] });
-      }
+      mutations.updateObject({ ...obj, x, y, updated_at: new Date().toISOString() });
       multiDragStartRef.current = null;
-      dragBeforeRef.current = null;
     },
-    [objects, selectedIds, mutations, recordAction],
+    [objects, selectedIds, mutations],
   );
 
   const handleResize = useCallback(
@@ -338,7 +315,6 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       if (!obj) return;
       if (!resizeOriginRef.current) {
         resizeOriginRef.current = { x: obj.x, y: obj.y };
-        resizeBeforeRef.current = { ...obj };
       }
       const origin = resizeOriginRef.current;
       mutations.updateObject({
@@ -363,20 +339,15 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         updated_at: new Date().toISOString(),
       };
       mutations.updateObject(updated);
-      if (resizeBeforeRef.current) {
-        recordAction({ type: "update", before: [resizeBeforeRef.current], after: [updated] });
-      }
       resizeOriginRef.current = null;
-      resizeBeforeRef.current = null;
     },
-    [objects, mutations, recordAction],
+    [objects, mutations],
   );
 
   const handleRotate = useCallback(
     (objectId: string, rotation: number) => {
       const obj = objects.get(objectId);
       if (!obj) return;
-      if (!rotateBeforeRef.current) rotateBeforeRef.current = { ...obj };
       mutations.updateObject({ ...obj, rotation, updated_at: new Date().toISOString() });
     },
     [objects, mutations],
@@ -388,19 +359,14 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       if (!obj) return;
       const updated = { ...obj, rotation, updated_at: new Date().toISOString() };
       mutations.updateObject(updated);
-      if (rotateBeforeRef.current) {
-        recordAction({ type: "update", before: [rotateBeforeRef.current], after: [updated] });
-      }
-      rotateBeforeRef.current = null;
     },
-    [objects, mutations, recordAction],
+    [objects, mutations],
   );
 
   const handleLineUpdate = useCallback(
     (lineId: string, updates: Partial<BoardObject>) => {
       const obj = objects.get(lineId);
       if (!obj) return;
-      if (!lineEditBeforeRef.current) lineEditBeforeRef.current = { ...obj };
       mutations.updateObject({ ...obj, ...updates, updated_at: new Date().toISOString() });
     },
     [objects, mutations],
@@ -412,12 +378,8 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       if (!obj) return;
       const updated = { ...obj, ...updates, updated_at: new Date().toISOString() };
       mutations.updateObject(updated);
-      if (lineEditBeforeRef.current) {
-        recordAction({ type: "update", before: [lineEditBeforeRef.current], after: [updated] });
-      }
-      lineEditBeforeRef.current = null;
     },
-    [objects, mutations, recordAction],
+    [objects, mutations],
   );
 
   const handleInlineSave = useCallback(
@@ -425,12 +387,9 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       if (!editingId) return;
       const obj = objects.get(editingId);
       if (!obj) return;
-      const before = { ...obj };
-      const updated = { ...obj, text, updated_at: new Date().toISOString() };
-      mutations.updateObject(updated);
-      recordAction({ type: "update", before: [before], after: [updated] });
+      mutations.updateObject({ ...obj, text, updated_at: new Date().toISOString() });
     },
-    [editingId, objects, mutations, recordAction],
+    [editingId, objects, mutations],
   );
 
   const handleFormatChange = useCallback(
@@ -438,35 +397,25 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       if (!editingId) return;
       const obj = objects.get(editingId);
       if (!obj) return;
-      const before = { ...obj };
-      const updated = { ...obj, ...updates, updated_at: new Date().toISOString() };
-      mutations.updateObject(updated);
-      recordAction({ type: "update", before: [before], after: [updated] });
+      mutations.updateObject({ ...obj, ...updates, updated_at: new Date().toISOString() });
     },
-    [editingId, objects, mutations, recordAction],
+    [editingId, objects, mutations],
   );
 
   const handleColorChange = useCallback(
     (color: string) => {
       if (selectedIds.size === 0) return;
       const now = new Date().toISOString();
-      const beforeObjs: BoardObject[] = [];
-      const afterObjs: BoardObject[] = [];
       for (const id of selectedIds) {
         const obj = objects.get(id);
         if (!obj) continue;
-        beforeObjs.push({ ...obj });
         const updated = obj.type === "line"
           ? { ...obj, stroke_color: color, updated_at: now }
           : { ...obj, color, updated_at: now };
         mutations.updateObject(updated);
-        afterObjs.push(updated);
-      }
-      if (beforeObjs.length > 0) {
-        recordAction({ type: "update", before: beforeObjs, after: afterObjs });
       }
     },
-    [selectedIds, objects, mutations, recordAction],
+    [selectedIds, objects, mutations],
   );
 
   const handleDelete = useCallback(() => {
@@ -478,20 +427,12 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         for (const lineId of connectedLines) toDelete.add(lineId);
       }
     }
-    const deletedObjs: BoardObject[] = [];
-    for (const id of toDelete) {
-      const obj = objects.get(id);
-      if (obj) deletedObjs.push({ ...obj });
-    }
     for (const id of toDelete) {
       mutations.deleteObject(id);
     }
-    if (deletedObjs.length > 0) {
-      recordAction({ type: "delete", objects: deletedObjs });
-    }
     setSelected(null);
     setEditingId(null);
-  }, [selectedIds, connectionIndex, objects, mutations, setSelected, recordAction]);
+  }, [selectedIds, connectionIndex, objects, mutations, setSelected]);
 
   const duplicateObjects = useCallback((objs: BoardObject[], offset = 20) => {
     const now = new Date().toISOString();
@@ -515,12 +456,9 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       newObjs.push(newObj);
       newIds.add(newObj.id);
     }
-    if (newObjs.length > 0) {
-      recordAction({ type: "create", objects: newObjs });
-    }
     setSelectedIds(newIds);
     return newObjs;
-  }, [objects, userId, displayName, mutations, setSelectedIds, recordAction]);
+  }, [objects, userId, displayName, mutations, setSelectedIds]);
 
   // Keyboard handler
   useEffect(() => {
