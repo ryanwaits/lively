@@ -1,25 +1,34 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   OpenBlocksClient,
   LiveObject,
-  LiveMap,
+  LiveList,
 } from "@waits/openblocks-client";
 import {
   OpenBlocksProvider,
   RoomProvider,
-  useStorage,
+  useStorageSuspense,
   useMutation,
   useLiveState,
   useHistory,
+  useUpdateMyPresence,
+  useOthers,
+  useSelf,
+  useSyncStatus,
+  useBroadcastEvent,
+  useEventListener,
+  useLostConnectionListener,
+  useErrorListener,
+  ClientSideSuspense,
 } from "@waits/openblocks-react";
 import {
   AvatarStack,
-  ConnectionBadge,
   CursorOverlay,
   useCursorTracking,
 } from "@waits/openblocks-ui";
+import type { PresenceUser } from "@waits/openblocks-types";
 
 // ── OpenBlocks client singleton ─────────────────────────────
 const serverUrl =
@@ -32,6 +41,7 @@ interface Todo {
   text: string;
   completed: boolean;
   createdAt: string;
+  _index: number;
 }
 
 // ── Main page ───────────────────────────────────────────────
@@ -77,12 +87,60 @@ export default function TodoPage() {
         roomId="todo-default"
         userId={userId}
         displayName={displayName}
-        initialStorage={{ todos: new LiveMap<LiveObject>() }}
+        initialStorage={{ todos: new LiveList([]) }}
       >
-        <TodoContent />
+        <ClientSideSuspense fallback={<TodoSkeleton />}>
+          {() => <TodoContent />}
+        </ClientSideSuspense>
       </RoomProvider>
     </OpenBlocksProvider>
   );
+}
+
+// ── Skeleton loading state ──────────────────────────────────
+function TodoSkeleton() {
+  return (
+    <div className="mx-auto max-w-lg px-4 py-12">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
+        <div className="h-8 w-20 animate-pulse rounded bg-gray-200" />
+      </div>
+      <div className="mb-4 flex gap-2">
+        <div className="h-10 flex-1 animate-pulse rounded-lg bg-gray-200" />
+        <div className="h-10 w-16 animate-pulse rounded-lg bg-gray-200" />
+      </div>
+      <div className="space-y-1">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-12 animate-pulse rounded-lg bg-gray-100"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Toast system ────────────────────────────────────────────
+interface Toast {
+  id: string;
+  message: string;
+  type: "warning" | "error";
+}
+
+function useToasts() {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const addToast = useCallback((message: string, type: "warning" | "error") => {
+    const id = crypto.randomUUID();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  }, []);
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+  return { toasts, addToast, removeToast };
 }
 
 // ── Todo list UI ────────────────────────────────────────────
@@ -92,11 +150,52 @@ function TodoContent() {
   const [newText, setNewText] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showPresencePanel, setShowPresencePanel] = useState(false);
+  const presencePanelRef = useRef<HTMLDivElement>(null);
 
   const [filter, setFilter] = useLiveState<FilterMode>("filter", "all");
   const { undo, redo, canUndo, canRedo } = useHistory();
 
   const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>();
+
+  // Presence hooks
+  const updatePresence = useUpdateMyPresence();
+  const others = useOthers();
+  const self = useSelf();
+
+  // Sync status
+  const syncStatus = useSyncStatus();
+
+  // Broadcast events
+  const broadcast = useBroadcastEvent<{ type: "celebration" }>();
+
+  // Toasts
+  const { toasts, addToast, removeToast } = useToasts();
+
+  // Connection resilience
+  useLostConnectionListener(() => {
+    addToast("Connection lost, reconnecting...", "warning");
+  });
+  useErrorListener((err) => {
+    addToast(err.message, "error");
+  });
+
+  // Celebration event listener
+  useEventListener<{ type: "celebration" }>((event) => {
+    if (event.type === "celebration") {
+      setShowCelebration(true);
+    }
+  });
+
+  // Auto-dismiss celebration
+  useEffect(() => {
+    if (!showCelebration) return;
+    const t = setTimeout(() => setShowCelebration(false), 3000);
+    return () => clearTimeout(t);
+  }, [showCelebration]);
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -109,27 +208,50 @@ function TodoContent() {
     return () => window.removeEventListener("keydown", handler);
   }, [undo, redo]);
 
-  const todos = useStorage((root) => {
-    const map = root.get("todos") as LiveMap<LiveObject> | undefined;
-    if (!map) return [] as Todo[];
-    const result: Todo[] = [];
-    map.forEach((val, key) => {
-      result.push({
-        id: key,
-        text: val.get("text") as string,
-        completed: val.get("completed") as boolean,
-        createdAt: val.get("createdAt") as string,
-      });
-    });
-    result.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    return result;
+  // Click outside to close presence panel
+  useEffect(() => {
+    if (!showPresencePanel) return;
+    const handler = (e: MouseEvent) => {
+      if (presencePanelRef.current && !presencePanelRef.current.contains(e.target as Node)) {
+        setShowPresencePanel(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showPresencePanel]);
+
+  const todos = useStorageSuspense((root) => {
+    const list = root.get("todos") as LiveList<LiveObject> | undefined;
+    if (!list) return [] as Todo[];
+    return list.map((item, idx) => ({
+      id: item.get("id") as string,
+      text: item.get("text") as string,
+      completed: item.get("completed") as boolean,
+      createdAt: item.get("createdAt") as string,
+      _index: idx,
+    }));
   });
 
+  // Track previous all-completed state for celebration
+  const prevAllCompleteRef = useRef(false);
+  useEffect(() => {
+    if (todos.length === 0) {
+      prevAllCompleteRef.current = false;
+      return;
+    }
+    const allComplete = todos.every((t) => t.completed);
+    if (allComplete && !prevAllCompleteRef.current) {
+      broadcast({ type: "celebration" });
+      setShowCelebration(true);
+    }
+    prevAllCompleteRef.current = allComplete;
+  }, [todos, broadcast]);
+
   const addTodo = useMutation(({ storage }, text: string) => {
-    const map = storage.root.get("todos") as LiveMap<LiveObject>;
-    map.set(
-      crypto.randomUUID(),
+    const list = storage.root.get("todos") as LiveList<LiveObject>;
+    list.push(
       new LiveObject({
+        id: crypto.randomUUID(),
         text,
         completed: false,
         createdAt: new Date().toISOString(),
@@ -138,32 +260,54 @@ function TodoContent() {
   }, []);
 
   const toggleTodo = useMutation(({ storage }, id: string) => {
-    const map = storage.root.get("todos") as LiveMap<LiveObject>;
-    const todo = map.get(id);
-    if (todo) todo.set("completed", !todo.get("completed"));
+    const list = storage.root.get("todos") as LiveList<LiveObject>;
+    let idx = -1;
+    list.forEach((item, i) => {
+      if (item.get("id") === id) idx = i;
+    });
+    if (idx >= 0) {
+      const item = list.get(idx) as LiveObject;
+      item.set("completed", !item.get("completed"));
+    }
   }, []);
 
   const deleteTodo = useMutation(({ storage }, id: string) => {
-    const map = storage.root.get("todos") as LiveMap<LiveObject>;
-    map.delete(id);
+    const list = storage.root.get("todos") as LiveList<LiveObject>;
+    let idx = -1;
+    list.forEach((item, i) => {
+      if (item.get("id") === id) idx = i;
+    });
+    if (idx >= 0) list.delete(idx);
   }, []);
 
   const updateTodoText = useMutation(
     ({ storage }, id: string, text: string) => {
-      const map = storage.root.get("todos") as LiveMap<LiveObject>;
-      const todo = map.get(id);
-      if (todo) todo.set("text", text);
+      const list = storage.root.get("todos") as LiveList<LiveObject>;
+      let idx = -1;
+      list.forEach((item, i) => {
+        if (item.get("id") === id) idx = i;
+      });
+      if (idx >= 0) {
+        const item = list.get(idx) as LiveObject;
+        item.set("text", text);
+      }
     },
     []
   );
 
-  if (!todos) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-gray-400">Connecting...</div>
-      </div>
-    );
-  }
+  const moveTodo = useMutation(
+    ({ storage }, fromId: string, toIndex: number) => {
+      const list = storage.root.get("todos") as LiveList<LiveObject>;
+      let fromIdx = -1;
+      list.forEach((item, i) => {
+        if (item.get("id") === fromId) fromIdx = i;
+      });
+      if (fromIdx >= 0 && fromIdx !== toIndex) {
+        list.move(fromIdx, toIndex);
+      }
+    },
+    []
+  );
 
   const completedCount = todos.filter((t) => t.completed).length;
   const filteredTodos = todos.filter((t) => {
@@ -175,6 +319,7 @@ function TodoContent() {
   const startEditing = (todo: Todo) => {
     setEditingId(todo.id);
     setEditText(todo.text);
+    updatePresence({ location: todo.id });
   };
 
   const commitEdit = () => {
@@ -182,23 +327,76 @@ function TodoContent() {
     updateTodoText(editingId, editText.trim());
     setEditingId(null);
     setEditText("");
+    updatePresence({ location: undefined });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditText("");
+    updatePresence({ location: undefined });
   };
+
+  const userCount = (self ? 1 : 0) + others.length;
 
   return (
     <div ref={ref} className="relative min-h-screen w-full" onMouseMove={onMouseMove}>
       {/* Live cursors */}
       <CursorOverlay />
+
+      {/* Celebration banner */}
+      {showCelebration && (
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 animate-bounce rounded-xl bg-green-500 px-6 py-3 text-sm font-semibold text-white shadow-lg">
+          All tasks complete!
+        </div>
+      )}
+
+      {/* Toast container */}
+      {toasts.length > 0 && (
+        <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg ${
+                toast.type === "warning"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              <span className="flex-1">{toast.message}</span>
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="ml-2 opacity-60 hover:opacity-100"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="mx-auto max-w-lg px-4 py-12">
 
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold">Collaborative Todos</h1>
+
+            {/* Sync status */}
+            {syncStatus === "synchronizing" && (
+              <span className="flex items-center gap-1 text-xs text-yellow-600">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
+                Syncing
+              </span>
+            )}
+            {syncStatus === "not-synchronized" && (
+              <span className="flex items-center gap-1 text-xs text-red-600">
+                <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+                Offline
+              </span>
+            )}
+
             <button
               onClick={undo}
               disabled={!canUndo}
@@ -217,8 +415,35 @@ function TodoContent() {
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <ConnectionBadge />
             <AvatarStack />
+
+            {/* Presence panel toggle */}
+            <div className="relative" ref={presencePanelRef}>
+              <button
+                onClick={() => setShowPresencePanel((v) => !v)}
+                className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M2.5 12.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+                {userCount}
+              </button>
+
+              {showPresencePanel && (
+                <div className="absolute right-0 top-full mt-1 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
+                  {self && (
+                    <PresenceRow user={self} isSelf />
+                  )}
+                  {others.map((user) => (
+                    <PresenceRow key={user.userId} user={user} />
+                  ))}
+                  {userCount === 0 && (
+                    <p className="px-2 py-1 text-xs text-gray-400">No users connected</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -276,71 +501,132 @@ function TodoContent() {
                 : `No ${filter} todos.`}
             </p>
           ) : (
-            filteredTodos.map((todo) => (
-              <div
-                key={todo.id}
-                className="group flex items-center gap-3 rounded-lg bg-white px-4 py-3 shadow-sm"
-              >
-                {/* Checkbox */}
-                <button
-                  onClick={() => toggleTodo(todo.id)}
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
-                    todo.completed
-                      ? "border-blue-500 bg-blue-500 text-white"
-                      : "border-gray-300 hover:border-blue-400"
-                  }`}
+            filteredTodos.map((todo, filteredIdx) => {
+              const editingUsers = others.filter((u) => u.location === todo.id);
+              const isDragging = dragId === todo.id;
+              const isDropTarget = dragOverIdx === filteredIdx;
+
+              return (
+                <div
+                  key={todo.id}
+                  className={`group flex items-center gap-3 rounded-lg bg-white px-4 py-3 shadow-sm transition-opacity ${
+                    isDragging ? "opacity-50" : ""
+                  } ${isDropTarget ? "border-t-2 border-blue-400" : "border-t-2 border-transparent"}`}
+                  onDragOver={(e) => {
+                    if (filter !== "all") return;
+                    e.preventDefault();
+                    setDragOverIdx(filteredIdx);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (filter !== "all" || !dragId) return;
+                    moveTodo(dragId, todo._index);
+                    setDragId(null);
+                    setDragOverIdx(null);
+                  }}
                 >
-                  {todo.completed && (
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  {/* Drag grip handle — only in "all" filter */}
+                  {filter === "all" && (
+                    <span
+                      draggable
+                      onDragStart={(e) => {
+                        setDragId(todo.id);
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      onDragEnd={() => {
+                        setDragId(null);
+                        setDragOverIdx(null);
+                      }}
+                      className="cursor-grab text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
+                    >
+                      <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+                        <circle cx="3" cy="3" r="1.2" />
+                        <circle cx="7" cy="3" r="1.2" />
+                        <circle cx="3" cy="8" r="1.2" />
+                        <circle cx="7" cy="8" r="1.2" />
+                        <circle cx="3" cy="13" r="1.2" />
+                        <circle cx="7" cy="13" r="1.2" />
+                      </svg>
+                    </span>
+                  )}
+
+                  {/* Checkbox */}
+                  <button
+                    onClick={() => toggleTodo(todo.id)}
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                      todo.completed
+                        ? "border-blue-500 bg-blue-500 text-white"
+                        : "border-gray-300 hover:border-blue-400"
+                    }`}
+                  >
+                    {todo.completed && (
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                        <path
+                          d="M1 4L3.5 6.5L9 1"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Text — inline edit on double click */}
+                  {editingId === todo.id ? (
+                    <input
+                      className="flex-1 rounded border border-blue-400 px-1 py-0.5 text-sm outline-none"
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      onBlur={commitEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitEdit();
+                        if (e.key === "Escape") cancelEdit();
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <span
+                      className={`flex-1 cursor-text text-sm ${todo.completed ? "text-gray-400 line-through" : ""}`}
+                      onDoubleClick={() => startEditing(todo)}
+                    >
+                      {todo.text}
+                    </span>
+                  )}
+
+                  {/* Who's editing indicators */}
+                  {editingUsers.length > 0 && (
+                    <div className="flex -space-x-1.5">
+                      {editingUsers.map((u) => (
+                        <span
+                          key={u.userId}
+                          className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold text-white ring-2 ring-white"
+                          style={{ backgroundColor: u.color }}
+                          title={`${u.displayName} is editing`}
+                        >
+                          {u.displayName.charAt(0).toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Delete button */}
+                  <button
+                    onClick={() => deleteTodo(todo.id)}
+                    className="text-gray-300 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path
-                        d="M1 4L3.5 6.5L9 1"
+                        d="M4 4L12 12M12 4L4 12"
                         stroke="currentColor"
-                        strokeWidth="2"
+                        strokeWidth="1.5"
                         strokeLinecap="round"
-                        strokeLinejoin="round"
                       />
                     </svg>
-                  )}
-                </button>
-
-                {/* Text — inline edit on double click */}
-                {editingId === todo.id ? (
-                  <input
-                    className="flex-1 rounded border border-blue-400 px-1 py-0.5 text-sm outline-none"
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    onBlur={commitEdit}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") commitEdit();
-                      if (e.key === "Escape") cancelEdit();
-                    }}
-                    autoFocus
-                  />
-                ) : (
-                  <span
-                    className={`flex-1 cursor-text text-sm ${todo.completed ? "text-gray-400 line-through" : ""}`}
-                    onDoubleClick={() => startEditing(todo)}
-                  >
-                    {todo.text}
-                  </span>
-                )}
-
-                {/* Delete button */}
-                <button
-                  onClick={() => deleteTodo(todo.id)}
-                  className="text-gray-300 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M4 4L12 12M12 4L4 12"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ))
+                  </button>
+                </div>
+              );
+            })
           )}
         </div>
 
@@ -350,10 +636,38 @@ function TodoContent() {
             {completedCount} of {todos.length} completed
             <span className="ml-1 text-gray-300">
               &middot; double-click to edit
+              {filter === "all" && " · drag to reorder"}
             </span>
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Presence panel row ──────────────────────────────────────
+function PresenceRow({ user, isSelf }: { user: PresenceUser; isSelf?: boolean }) {
+  return (
+    <div className="flex items-center gap-2 rounded-md px-2 py-1.5">
+      <span
+        className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white"
+        style={{ backgroundColor: user.color }}
+      >
+        {user.displayName.charAt(0).toUpperCase()}
+      </span>
+      <span className="flex-1 truncate text-sm text-gray-700">
+        {user.displayName}
+        {isSelf && <span className="ml-1 text-gray-400">(you)</span>}
+      </span>
+      <span
+        className={`h-2 w-2 rounded-full ${
+          user.onlineStatus === "online"
+            ? "bg-green-500"
+            : user.onlineStatus === "away"
+              ? "bg-yellow-500"
+              : "bg-gray-300"
+        }`}
+      />
     </div>
   );
 }

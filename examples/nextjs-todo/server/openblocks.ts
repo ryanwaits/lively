@@ -8,8 +8,8 @@ const server = new OpenBlocksServer({
     type: "LiveObject" as const,
     data: {
       todos: {
-        type: "LiveMap" as const,
-        entries: {},
+        type: "LiveList" as const,
+        items: [],
       },
     },
   }),
