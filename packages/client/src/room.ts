@@ -169,6 +169,20 @@ export class Room {
     onlineStatus?: OnlineStatus;
   }): void {
     this.send({ type: "presence:update", ...data });
+
+    // Optimistic local update so getters (getFollowing, etc.) reflect immediately
+    const idx = this.presence.findIndex((u) => u.userId === this.userId);
+    if (idx !== -1) {
+      const self = { ...this.presence[idx] };
+      if (data.location !== undefined) self.location = data.location;
+      if (data.metadata !== undefined) {
+        self.metadata = { ...((self.metadata as Record<string, unknown>) ?? {}), ...data.metadata };
+      }
+      if (data.onlineStatus !== undefined) self.onlineStatus = data.onlineStatus;
+      this.presence = [...this.presence];
+      this.presence[idx] = self as PresenceUser;
+      this.emitter.emit("presence", this.presence);
+    }
   }
 
   getOthersOnLocation(locationId: string): PresenceUser[] {

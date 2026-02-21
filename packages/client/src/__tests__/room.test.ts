@@ -325,6 +325,24 @@ describe("Room", () => {
     expect(room.getFollowing()).toBe("bob");
   });
 
+  it("followUser optimistically updates getFollowing without server roundtrip", async () => {
+    const room = createRoom();
+    room.connect();
+    await new Promise((r) => queueMicrotask(r));
+
+    // Set up presence so getSelf works
+    MockWebSocket.instances[0].simulateMessage(
+      JSON.stringify({ type: "presence", users: [{ userId: "alice", displayName: "Alice", color: "#f00", connectedAt: 1 }] })
+    );
+
+    expect(room.getFollowing()).toBeNull();
+    room.followUser("bob");
+    expect(room.getFollowing()).toBe("bob");
+
+    room.stopFollowing();
+    expect(room.getFollowing()).toBeNull();
+  });
+
   it("getFollowers filters others following this user", async () => {
     const room = createRoom();
     room.connect();
