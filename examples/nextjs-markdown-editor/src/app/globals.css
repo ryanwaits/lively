@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+@source "../../../../packages/ui/src";
+@source "../../../../packages/react-codemirror/src";
+
+:root {
+  --ob-editor-font: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Scrollbar — match Zed */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #e5e5e5;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background-color: #d4d4d4; }
+
+/* y-codemirror.next collaborative cursor overrides */
+.cm-ySelectionCaret {
+  position: relative;
+  border-left: 2px solid;
+  margin-left: -1px;
+  margin-right: -1px;
+  word-break: normal;
+  pointer-events: none;
+}
+
+.cm-ySelectionInfo {
+  position: absolute;
+  top: -1.5em;
+  left: -1px;
+  font-size: 10px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  font-style: normal;
+  line-height: 1;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 3px 3px 3px 0;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+::selection {
+  background: rgba(59, 130, 246, 0.15);
+}

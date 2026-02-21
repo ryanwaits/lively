@@ -1,0 +1,44 @@
+{
+  "name": "@examples/nextjs-markdown-editor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3003",
+    "dev:server": "bun run server/openblocks.ts",
+    "prebuild": "cd ../.. && bun run build:packages",
+    "build": "next build",
+    "start": "next start --port 3003"
+  },
+  "dependencies": {
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "@waits/openblocks-server": "workspace:*",
+    "@waits/openblocks-client": "workspace:*",
+    "@waits/openblocks-storage": "workspace:*",
+    "@waits/openblocks-react": "workspace:*",
+    "@waits/openblocks-react-codemirror": "workspace:*",
+    "@waits/openblocks-yjs": "workspace:*",
+    "@waits/openblocks-ui": "workspace:*",
+    "@waits/openblocks-types": "workspace:*",
+    "@codemirror/state": "^6.5.4",
+    "@codemirror/view": "^6.39.15",
+    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/autocomplete": "^6.20.0",
+    "@codemirror/commands": "^6.10.2",
+    "@codemirror/language": "^6.12.1",
+    "@codemirror/language-data": "^6.5.2",
+    "@lezer/highlight": "^1.2.3",
+    "codemirror": "^6.0.2",
+    "y-codemirror.next": "^0.3.5",
+    "yjs": "^13.6.29"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
