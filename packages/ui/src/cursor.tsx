@@ -2,10 +2,11 @@
  * A single cursor indicator positioned absolutely within a `position: relative`
  * container. Matches the cursor style used in the whiteboard example.
  *
- * Supports two display modes:
+ * Supports three display modes:
  * - `"name"` (default): shows a colored name label beside the arrow.
  * - `"avatar"`: shows a 24px circular avatar image (or initials fallback)
  *   beside the arrow instead of the name label.
+ * - `"cursor"`: shows only the colored arrow, no label or avatar.
  */
 export interface CursorProps {
   x: number;
@@ -13,8 +14,8 @@ export interface CursorProps {
   color: string;
   displayName: string;
   className?: string;
-  /** Display mode — `"name"` (default) shows a label, `"avatar"` shows a circular avatar. */
-  mode?: "name" | "avatar";
+  /** Display mode — `"name"` (default) shows a label, `"avatar"` shows a circular avatar, `"cursor"` shows arrow only. */
+  mode?: "name" | "avatar" | "cursor";
   /** URL to the user's avatar image. Used when `mode="avatar"`. */
   avatarUrl?: string;
   /** Extra inline styles, e.g. opacity transitions for inactivity fade. */
@@ -68,7 +69,7 @@ export function Cursor({
         />
       </svg>
 
-      {mode === "avatar" ? (
+      {mode === "cursor" ? null : mode === "avatar" ? (
         avatarUrl ? (
           <img
             src={avatarUrl}

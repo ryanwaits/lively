@@ -6,7 +6,7 @@ export interface CursorOverlayProps {
   /** Extra class names applied to each `<Cursor>` element */
   className?: string;
   /** Display mode passed to each `<Cursor>`. Default: `"name"`. */
-  mode?: "name" | "avatar";
+  mode?: "name" | "avatar" | "cursor";
   /**
    * Milliseconds of cursor inactivity before fading to transparent.
    * Undefined or 0 = no fade.
