@@ -1,0 +1,48 @@
+{
+  "name": "@examples/nextjs-notion-editor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3004",
+    "dev:server": "bun run server/openblocks.ts",
+    "prebuild": "cd ../.. && bun run build:packages",
+    "build": "next build",
+    "start": "next start --port 3004"
+  },
+  "dependencies": {
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "@waits/openblocks-server": "workspace:*",
+    "@waits/openblocks-client": "workspace:*",
+    "@waits/openblocks-storage": "workspace:*",
+    "@waits/openblocks-react": "workspace:*",
+    "@waits/openblocks-react-tiptap": "workspace:*",
+    "@waits/openblocks-yjs": "workspace:*",
+    "@waits/openblocks-ui": "workspace:*",
+    "@waits/openblocks-types": "workspace:*",
+    "@tiptap/react": "^3.20.0",
+    "@tiptap/pm": "^3.20.0",
+    "@tiptap/starter-kit": "^3.20.0",
+    "@tiptap/extension-task-list": "^3.20.0",
+    "@tiptap/extension-task-item": "^3.20.0",
+    "@tiptap/extension-table": "^3.20.0",
+    "@tiptap/extension-placeholder": "^3.20.0",
+    "@tiptap/extension-image": "^3.20.0",
+    "@tiptap/extension-underline": "^3.20.0",
+    "@tiptap/extension-highlight": "^3.20.0",
+    "@tiptap/extension-link": "^3.20.0",
+    "@tiptap/extension-code-block-lowlight": "^3.20.0",
+    "lowlight": "^3.3.0",
+    "highlight.js": "^11.11.0",
+    "yjs": "^13.6.29"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
