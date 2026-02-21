@@ -1,7 +1,7 @@
 import type { Room, LiveObject, LiveMap } from "@waits/openblocks-client";
 import { LiveObject as LO } from "@waits/openblocks-storage";
 import type { BoardObject, Frame } from "@/types/board";
-import { serializeBoardState } from "./system-prompt";
+import { serializeBoardState, serializeFrameState } from "./system-prompt";
 import { computeEdgePoint, computeLineBounds } from "@/lib/geometry/edge-intersection";
 import { frameOriginX, FRAME_ORIGIN_Y } from "@/lib/geometry/frames";
 import { cascadeDeleteFrame } from "@/lib/sync/cascade-delete-frame";
@@ -260,7 +260,7 @@ export async function executeToolCall(
     }
 
     case "getBoardState": {
-      return { result: serializeBoardState(ctx.objects) };
+      return { result: `${serializeBoardState(ctx.objects)}${serializeFrameState(ctx.frames)}` };
     }
 
     default:

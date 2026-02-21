@@ -2,13 +2,13 @@ import type { BoardObject, Frame } from "@/types/board";
 import { BOARD_WIDTH, BOARD_HEIGHT, frameOriginX, FRAME_ORIGIN_Y } from "@/lib/geometry/frames";
 
 export function serializeFrameState(frames: Frame[]): string {
-  if (frames.length <= 1) return "";
+  if (frames.length === 0) return "";
   const info = frames.map((f) => {
     const ox = frameOriginX(f.index);
     const oy = FRAME_ORIGIN_Y;
-    return `  - "${f.label}" (index ${f.index}): origin (${ox}, ${oy}), center (${ox + BOARD_WIDTH / 2}, ${oy + BOARD_HEIGHT / 2})`;
+    return `  - id="${f.id}" "${f.label}" (index ${f.index}): origin (${ox}, ${oy}), center (${ox + BOARD_WIDTH / 2}, ${oy + BOARD_HEIGHT / 2})`;
   });
-  return `\n\n## Frames\nThis board has ${frames.length} frames laid out horizontally. Each frame is ${BOARD_WIDTH}x${BOARD_HEIGHT}.\n${info.join("\n")}\nTo place an object in a specific frame, compute x/y relative to that frame's origin.`;
+  return `\n\n## Frames\nThis board has ${frames.length} frame(s) laid out horizontally. Each frame is ${BOARD_WIDTH}x${BOARD_HEIGHT}.\n${info.join("\n")}\nTo place an object in a specific frame, compute x/y relative to that frame's origin. Use the frame id to delete a frame.`;
 }
 
 export function serializeBoardState(objects: BoardObject[]): string {
