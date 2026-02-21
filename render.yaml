@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: openblocks-ws
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    repo: https://github.com/ryanwaits/openblocks
+    branch: feat/openblocks
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false

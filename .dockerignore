@@ -1,0 +1,19 @@
+node_modules
+.next
+.git
+.env*
+
+# Client-side packages — keep package.json for workspace resolution, exclude src
+packages/client/src/
+packages/client/dist/
+packages/react/src/
+packages/react/dist/
+packages/ui/src/
+packages/ui/dist/
+
+# Example app frontend (only server/ and src/types/ needed)
+examples/nextjs-whiteboard/src/app/
+examples/nextjs-whiteboard/src/components/
+examples/nextjs-whiteboard/src/lib/
+examples/nextjs-whiteboard/src/hooks/
+examples/nextjs-whiteboard/.next/
