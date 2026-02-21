@@ -72,14 +72,24 @@ Renders a `<Cursor>` for every other user in the room. Excludes the current user
 
 ```ts
 interface CursorOverlayProps {
-  className?: string; // extra class names applied to each <Cursor>
+  className?: string;           // extra class names applied to each <Cursor>
+  mode?: "name" | "avatar";     // display mode passed to each <Cursor>, default: "name"
+  inactivityTimeout?: number;   // ms before fading inactive cursors (default: none)
 }
 ```
+
+When `inactivityTimeout` is set, cursors that haven't moved within the timeout fade to `opacity: 0` with a 300ms CSS transition. Avatar URLs are pulled from each user's presence metadata.
 
 ```tsx
 <div ref={ref} onMouseMove={onMouseMove} className="relative">
   <CursorOverlay />
 </div>
+```
+
+Avatar mode with inactivity fade:
+
+```tsx
+<CursorOverlay mode="avatar" inactivityTimeout={5000} />
 ```
 
 ---
@@ -95,11 +105,29 @@ interface CursorProps {
   color: string;
   displayName: string;
   className?: string;
+  mode?: "name" | "avatar";       // default: "name"
+  avatarUrl?: string;              // URL for avatar image (avatar mode)
+  style?: React.CSSProperties;    // e.g. opacity transitions
 }
 ```
 
+In avatar mode, a 24px circular image is shown beside the cursor arrow. Falls back to an initials circle if no `avatarUrl` is provided.
+
 ```tsx
 <Cursor x={120} y={80} color="#e11d48" displayName="Alice" />
+```
+
+Avatar mode:
+
+```tsx
+<Cursor
+  x={120}
+  y={80}
+  color="#e11d48"
+  displayName="Alice"
+  mode="avatar"
+  avatarUrl="https://example.com/alice.jpg"
+/>
 ```
 
 ---

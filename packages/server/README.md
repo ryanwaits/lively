@@ -70,6 +70,44 @@ Push messages into a room from outside the WebSocket flow (e.g., an HTTP API han
 server.broadcastToRoom("room-id", JSON.stringify({ type: "notify", text: "Hello" }));
 ```
 
+## Server-side Storage Mutations
+
+Mutate a room's CRDT storage from the server. Ops are collected and broadcast to all connected clients. Server mutations do **not** create undo history entries.
+
+```ts
+await server.mutateStorage("room-1", (root) => {
+  root.set("serverUpdatedAt", Date.now());
+});
+```
+
+Returns `false` if the room doesn't exist or storage isn't initialized.
+
+---
+
+## Server-side Live State
+
+Set a live-state key from the server. Uses `"__server__"` as the userId and LWW with `Date.now()` for conflict resolution.
+
+```ts
+server.setLiveState("room-1", "status", "locked");
+```
+
+Broadcasts `state:update` to all clients. Returns `false` if the room doesn't exist.
+
+---
+
+## Get Room Users
+
+Return all connected users in a room.
+
+```ts
+const users: PresenceUser[] = server.getRoomUsers("room-1");
+```
+
+Returns an empty array if the room doesn't exist.
+
+---
+
 ## API Reference
 
 | Export | Description |
@@ -82,6 +120,9 @@ server.broadcastToRoom("room-id", JSON.stringify({ type: "notify", text: "Hello"
 | `PresenceUser` | User in a room — `userId`, `displayName`, `color`, `connectedAt` |
 | `CursorData` | Cursor position — `userId`, `displayName`, `color`, `x`, `y`, `lastUpdate` |
 | `RoomConfig` | Room tuning — `cleanupTimeoutMs`, `maxConnections` |
+| `server.mutateStorage(roomId, cb)` | Server-side CRDT mutation — runs callback against root, broadcasts ops |
+| `server.setLiveState(roomId, key, value)` | Set live-state key from server — LWW with `__server__` userId |
+| `server.getRoomUsers(roomId)` | Get all connected `PresenceUser[]` in a room |
 
 ## Built-in Behavior
 
