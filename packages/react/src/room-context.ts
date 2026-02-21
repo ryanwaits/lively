@@ -110,8 +110,15 @@ export function RoomProvider({
       if (!cancelled) setStorage(s);
     });
 
+    // After reconnection, applySnapshot replaces the root. Update React state
+    // so useMutation / useOpenBlocksSync closures see the new tree.
+    const unsubReset = (room as any).onStorageReset?.((newRoot: LiveObject) => {
+      if (!cancelled) setStorage({ root: newRoot });
+    });
+
     return () => {
       cancelled = true;
+      unsubReset?.();
       mountedRef.current = false;
       // Defer leaveRoom so strict-mode's synchronous remount can cancel it
       const capturedRoomId = roomId;

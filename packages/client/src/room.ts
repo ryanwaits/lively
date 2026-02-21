@@ -63,6 +63,7 @@ export class Room {
   private storageResolvers: Array<(result: { root: LiveObject }) => void> = [];
   private initialStorageData: Record<string, unknown> | undefined;
   private sentStorageInit = false;
+  private _onStorageReset: ((root: LiveObject) => void) | null = null;
 
   // Activity tracking
   private activityTracker: ActivityTracker;
@@ -349,6 +350,22 @@ export class Room {
     });
   }
 
+  /** Returns the current storage root, or null if storage hasn't loaded yet. */
+  getCurrentRoot(): LiveObject | null {
+    return this.storageDoc?.getRoot() ?? null;
+  }
+
+  /**
+   * Register a callback invoked when the storage root is replaced after
+   * a reconnection snapshot. Returns an unsubscribe function.
+   */
+  onStorageReset(cb: (root: LiveObject) => void): () => void {
+    this._onStorageReset = cb;
+    return () => {
+      if (this._onStorageReset === cb) this._onStorageReset = null;
+    };
+  }
+
   subscribe<K extends keyof RoomEvents>(event: K, callback: RoomEvents[K]): () => void;
   subscribe(
     target: AbstractCrdt,
@@ -433,6 +450,7 @@ export class Room {
         } else if (this.storageDoc) {
           // Reconnection — re-hydrate in-place
           this.storageDoc.applySnapshot(root);
+          this._onStorageReset?.(this.storageDoc.getRoot());
         } else {
           const doc = StorageDocument.deserialize(root);
           this.initStorageFromDoc(doc);
