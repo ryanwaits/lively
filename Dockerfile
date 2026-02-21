@@ -11,8 +11,8 @@ COPY packages/react/package.json packages/react/
 COPY packages/ui/package.json packages/ui/
 COPY examples/nextjs-whiteboard/package.json examples/nextjs-whiteboard/
 
-# 2. Install all deps (including devDeps for bunup build tool)
-RUN bun install --frozen-lockfile
+# 2. Install deps (subset of workspaces → lockfile won't match exactly)
+RUN bun install
 
 # 3. Copy + build workspace packages (dependency order)
 COPY packages/types/ packages/types/
