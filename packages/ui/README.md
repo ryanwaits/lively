@@ -139,7 +139,8 @@ A colored circle with the user's initials and a tooltip. Accepts a `PresenceUser
 ```ts
 interface AvatarProps {
   user: PresenceUser;
-  size?: "sm" | "md"; // default: "md"
+  size?: "sm" | "md";       // default: "md"
+  showStatus?: boolean;      // show online/away/offline dot, default: false
   className?: string;
 }
 ```
@@ -157,14 +158,23 @@ Stacked row of avatars for all users in the room. Shows a `+N` overflow badge wh
 
 ```ts
 interface AvatarStackProps {
-  max?: number;     // max avatars before overflow badge, default: 4
-  showSelf?: boolean; // include current user's avatar, default: true
+  max?: number;                              // max avatars before overflow badge, default: 4
+  showSelf?: boolean;                        // include current user's avatar, default: true
+  showStatus?: boolean;                      // show online/away/offline dots, default: false
+  locationId?: string;                       // filter to users at this location
+  onUserClick?: (user: PresenceUser) => void; // callback when an avatar is clicked
   className?: string;
 }
 ```
 
 ```tsx
-<AvatarStack max={5} />
+<AvatarStack max={5} showStatus />
+
+{/* Filter by location */}
+<AvatarStack locationId="page-1" />
+
+{/* Click to follow */}
+<AvatarStack onUserClick={(user) => followUser(user.userId)} />
 ```
 
 ---

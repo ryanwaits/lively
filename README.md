@@ -1,115 +1,123 @@
-# CollabBoard
+# OpenBlocks
 
-Real-time collaborative whiteboard built with Next.js, Konva, PartyKit, and Supabase.
+Real-time collaboration framework for React. CRDT storage, presence, cursors, live state, and undo/redo — all over WebSockets.
 
-## Tech Stack
+## Packages
 
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | Next.js 16 (App Router) |
-| **Runtime** | Node.js / Bun |
-| **Canvas** | Konva + react-konva |
-| **Styling** | Tailwind CSS v4 + shadcn/ui |
-| **Real-time** | PartyKit (WebSocket rooms) |
-| **Database** | Supabase (Postgres + Auth) |
-| **State** | Zustand |
+| Package | Description |
+|---------|-------------|
+| [`@waits/openblocks-types`](packages/types/) | Shared TypeScript types and wire protocol definitions |
+| [`@waits/openblocks-storage`](packages/storage/) | CRDT primitives — `LiveObject`, `LiveMap`, `LiveList` |
+| [`@waits/openblocks-client`](packages/client/) | Framework-agnostic client SDK (browser + Node/Bun) |
+| [`@waits/openblocks-server`](packages/server/) | WebSocket collaboration server |
+| [`@waits/openblocks-react`](packages/react/) | React hooks and providers (40+ hooks) |
+| [`@waits/openblocks-ui`](packages/ui/) | Pre-built components — cursors, avatars, connection badge |
+| [`@waits/openblocks-cli`](packages/cli/) | `openblocks` dev server CLI |
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Browser Client                    │
-│                                                     │
-│  ┌──────────┐  ┌──────────┐  ┌───────────────────┐ │
-│  │  Zustand  │  │  Konva   │  │   Next.js App     │ │
-│  │  Stores   │◄─┤  Canvas  │  │   Router (RSC)    │ │
-│  └────┬──┬──┘  └──────────┘  └───────────────────┘ │
-│       │  │                                          │
-└───────┼──┼──────────────────────────────────────────┘
-        │  │
-   ┌────┘  └────┐
-   ▼            ▼
-┌──────┐  ┌──────────┐
-│Supa- │  │PartyKit  │
-│base  │  │Server    │
-│      │  │          │
-│- Auth│  │- Cursors │
-│- CRUD│  │- Presence│
-│- RLS │  │- Sync    │
-└──────┘  └──────────┘
+types (base)
+  |
+storage (CRDT)
+  |
+client (SDK)            server (WebSocket)
+  |                       |
+react (hooks)           [standalone]
+  |
+ui (components)
 ```
 
-## Zustand Stores
+Each layer depends only on layers below it.
 
-| Store | Purpose |
-|-------|---------|
-| `auth-store` | User session, display name, anonymous auth |
-| `board-store` | Board objects `Map`, selected IDs, CRUD ops |
-| `presence-store` | Live cursors, online user list |
-| `viewport-store` | Zoom/pan state, persisted per-board in localStorage |
+## Quick Start
 
-## Object Types
+**Server:**
 
-- **Sticky Note** - colored background, text with formatting
-- **Rectangle** - outlined shape with fill color
-- **Text** - free-form text with bold/italic/underline/alignment
+```ts
+import { OpenBlocksServer } from "@waits/openblocks-server";
+
+const server = new OpenBlocksServer({ port: 1999 });
+await server.start();
+```
+
+**Client (React):**
+
+```tsx
+import { OpenBlocksClient } from "@waits/openblocks-client";
+import { OpenBlocksProvider, RoomProvider } from "@waits/openblocks-react";
+import { CursorOverlay, AvatarStack, useCursorTracking } from "@waits/openblocks-ui";
+
+const client = new OpenBlocksClient({ serverUrl: "ws://localhost:1999" });
+
+function App() {
+  return (
+    <OpenBlocksProvider client={client}>
+      <RoomProvider
+        roomId="my-room"
+        userId={user.id}
+        displayName={user.name}
+        initialStorage={{ count: 0 }}
+      >
+        <Toolbar />
+        <Canvas />
+      </RoomProvider>
+    </OpenBlocksProvider>
+  );
+}
+
+function Canvas() {
+  const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>();
+  const count = useStorage(root => root.get("count"));
+  const increment = useMutation(({ storage }) => {
+    storage.root.set("count", (storage.root.get("count") as number) + 1);
+  }, []);
+
+  return (
+    <div ref={ref} onMouseMove={onMouseMove} className="relative">
+      <CursorOverlay />
+      <p>Count: {count}</p>
+      <button onClick={increment}>+1</button>
+    </div>
+  );
+}
+
+function Toolbar() {
+  return <AvatarStack max={5} showStatus />;
+}
+```
 
 ## Features
 
-- Real-time cursor tracking with color-coded presence
-- Multi-select with rubber-band drag
-- Resize handles on all shapes
-- Inline text editing with formatting toolbar (B/I/U, alignment)
-- Viewport zoom/pan with per-board persistence
-- Board switcher in bottom toolbar
-- Ghost preview during object creation
+- **CRDT Storage** — `LiveObject`, `LiveMap`, `LiveList` with automatic conflict resolution
+- **Presence** — online/away/offline status, location tracking, custom metadata
+- **Cursors** — real-time cursor tracking with viewport-aware follow mode
+- **Live State** — ephemeral shared key-value state (not persisted)
+- **Undo/Redo** — automatic inverse op capture, batch support
+- **Broadcast Events** — custom ephemeral events between clients
+- **Activity Tracking** — automatic inactivity detection (away/offline)
+- **Follow Mode** — Figma-style "follow user" with viewport sync
+- **Suspense** — `useStorageSuspense` and SSR-safe `ClientSideSuspense`
 
-## Project Structure
+## Examples
 
-```
-src/
-├── app/
-│   ├── layout.tsx                # Root layout + metadata
-│   ├── page.tsx                  # Home (board list)
-│   └── board/[id]/page.tsx       # Board editor (main page)
-├── components/
-│   ├── auth/                     # Name dialog
-│   ├── boards/                   # Board cards, create dialog
-│   ├── canvas/                   # Canvas, shapes, toolbar, sidebar
-│   ├── presence/                 # Cursor overlay, online users
-│   └── ui/                       # shadcn/ui primitives
-├── lib/
-│   ├── store/                    # Zustand stores
-│   ├── supabase/                 # DB client + queries
-│   ├── sync/                     # PartyKit hook + broadcast helpers
-│   └── utils.ts                  # cn() utility
-└── types/
-    ├── board.ts                  # Domain types
-    └── messages.ts               # PartyKit message protocol
+| Example | Description |
+|---------|-------------|
+| [`nextjs-todo`](examples/nextjs-todo/) | Collaborative todo list with `LiveList`, drag-and-drop, presence |
+| [`nextjs-whiteboard`](examples/nextjs-whiteboard/) | Full collaborative canvas with shapes, connectors, follow mode |
 
-party/
-└── board-room.ts                 # PartyKit server room
-```
+## Documentation
 
-## Getting Started
+- [Getting Started](docs/guides/getting-started.md)
+- [Server Guide](docs/guides/server.md)
+- [Architecture](docs/architecture.md)
+- [Hooks Reference](docs/hooks/) (14 docs covering all hook families)
+- [Components](docs/components/)
+
+## Development
 
 ```bash
-# Install dependencies
 bun install
-
-# Set up environment variables
-cp .env.example .env.local
-# Fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_PARTYKIT_HOST
-
-# Run dev server (Next.js + PartyKit)
-bun run dev
+bun run build:packages
+bun run test:packages
 ```
-
-## Database
-
-Schema lives in `supabase-schema.sql`. Two tables:
-
-- **boards** - `id`, `name`, `created_by`, `created_at`
-- **board_objects** - `id`, `board_id`, `type`, `x`, `y`, `width`, `height`, `color`, `text`, `z_index`, `created_by`, `updated_at`
-
-RLS enabled on both tables. Anonymous read access, authenticated write access.

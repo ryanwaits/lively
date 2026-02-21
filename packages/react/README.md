@@ -118,6 +118,13 @@ interface PresenceUser {
   userId: string;
   displayName: string;
   color: string;
+  connectedAt: number;
+  onlineStatus: "online" | "away" | "offline";
+  lastActiveAt: number;
+  isIdle: boolean;
+  avatarUrl?: string;
+  location?: string;
+  metadata?: Record<string, unknown>;
 }
 ```
 
@@ -226,7 +233,16 @@ function useCursors(): Map<string, CursorData>
 Returns a `Map<userId, CursorData>` of all cursor positions in the room (including the current user). Re-renders only when positions actually change.
 
 ```ts
-interface CursorData { x: number; y: number }
+interface CursorData {
+  userId: string;
+  displayName: string;
+  color: string;
+  x: number;
+  y: number;
+  lastUpdate: number;
+  viewportPos?: { x: number; y: number };
+  viewportScale?: number;
+}
 ```
 
 ```tsx
@@ -245,10 +261,15 @@ return (
 ### `useUpdateCursor`
 
 ```ts
-function useUpdateCursor(): (x: number, y: number) => void
+function useUpdateCursor(): (
+  x: number,
+  y: number,
+  viewportPos?: { x: number; y: number },
+  viewportScale?: number
+) => void
 ```
 
-Returns a stable function to broadcast the current user's cursor position. Coordinates should be relative to the container you want to track.
+Returns a stable function to broadcast the current user's cursor position. Coordinates should be relative to the container you want to track. Optional viewport params enable follow mode.
 
 ```tsx
 const updateCursor = useUpdateCursor();
@@ -678,6 +699,46 @@ interface ClientSideSuspenseProps {
 
 ---
 
+### `useRoom`
+
+```ts
+function useRoom(): Room
+```
+
+Returns the raw `Room` instance from the nearest `<RoomProvider>`. Throws if used outside a provider. Useful for advanced patterns or direct access to `room.batch()`, `room.send()`, etc.
+
+---
+
+### `useClient`
+
+```ts
+function useClient(): OpenBlocksClient
+```
+
+Returns the `OpenBlocksClient` from the nearest `<OpenBlocksProvider>`. Useful for managing multiple rooms outside of React lifecycle.
+
+---
+
+### `useIsInsideRoom`
+
+```ts
+function useIsInsideRoom(): boolean
+```
+
+Returns `true` if the component is inside a `<RoomProvider>`. Useful for conditional rendering of collaboration features.
+
+---
+
+### `useStorageRoot`
+
+```ts
+function useStorageRoot(): { root: LiveObject } | null
+```
+
+Returns the raw storage root object, or `null` while storage is loading. Lower-level than `useStorage` — prefer `useStorage(selector)` for reactive reads.
+
+---
+
 ## Suspense entry point
 
 Import from `@waits/openblocks-react/suspense` to use `useStorageSuspense` — a variant of `useStorage` that throws a promise instead of returning `null` while loading. Wrap the consuming component in `<Suspense>`.
@@ -691,6 +752,21 @@ function Canvas() {
   // count is always T here — never null
   return <p>Count: {count}</p>;
 }
+```
+
+Suspense variants of the CRDT shortcut hooks are also available:
+
+```ts
+import {
+  useStorageSuspense,
+  useObjectSuspense,
+  useMapSuspense,
+  useListSuspense,
+} from "@waits/openblocks-react/suspense";
+
+const settings = useObjectSuspense<{ theme: string }>("settings");
+const users = useMapSuspense<UserData>("users");
+const items = useListSuspense<string>("items");
 ```
 
 The suspense entry re-exports all other hooks for single-import convenience — you do not need to import from both entry points.
