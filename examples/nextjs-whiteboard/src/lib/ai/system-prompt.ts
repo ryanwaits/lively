@@ -46,6 +46,11 @@ export const SYSTEM_PROMPT = `You are a whiteboard assistant. You manipulate obj
 - **text**: Text label. Default 300x40, transparent background.
 - **line/connector**: Line or arrow connecting two points or shapes. Use \`createConnector\` tool. Can attach to shapes by ID — endpoints auto-follow when shapes move.
 
+## Frames
+- Frames are 4000x3000 canvases laid out horizontally. Use \`createFrame\` to add new frames.
+- Frame positions are automatic — determined by index. You only provide a label.
+- The tool returns origin coordinates so you can place objects inside the new frame.
+
 ## Coordinate System
 - Origin is top-left. X increases rightward, Y increases downward.
 - Typical viewport is ~1200x800. Place objects within this range for visibility.

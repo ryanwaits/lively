@@ -124,6 +124,8 @@ export async function POST(request: Request) {
       objects,
       room,
       objectsMap,
+      framesMap: framesMap ?? undefined,
+      frames,
     };
 
     // Build user message with board state + selection context

@@ -1,8 +1,9 @@
 import type { Room, LiveObject, LiveMap } from "@waits/openblocks-client";
 import { LiveObject as LO } from "@waits/openblocks-storage";
-import type { BoardObject } from "@/types/board";
+import type { BoardObject, Frame } from "@/types/board";
 import { serializeBoardState } from "./system-prompt";
 import { computeEdgePoint, computeLineBounds } from "@/lib/geometry/edge-intersection";
+import { frameOriginX, FRAME_ORIGIN_Y } from "@/lib/geometry/frames";
 
 export interface ExecutorContext {
   boardId: string;
@@ -12,6 +13,8 @@ export interface ExecutorContext {
   objects: BoardObject[];
   room: Room;
   objectsMap: LiveMap<LiveObject>;
+  framesMap?: LiveMap<LiveObject>;
+  frames: Frame[];
 }
 
 interface ToolResult {
@@ -216,6 +219,23 @@ export async function executeToolCall(
 
       crdtCreate(ctx, obj);
       return { result: `Created connector (id: ${obj.id})${fromId ? ` from ${fromId}` : ""}${toId ? ` to ${toId}` : ""}`, objects: [obj] };
+    }
+
+    case "createFrame": {
+      if (!ctx.framesMap) return { result: "Error: frames storage not available" };
+      const nextIndex = ctx.frames.length === 0
+        ? 0
+        : Math.max(...ctx.frames.map((f) => f.index)) + 1;
+      const label = (toolInput.label as string) || `Frame ${nextIndex + 1}`;
+      const frame: Frame = { id: crypto.randomUUID(), index: nextIndex, label };
+      ctx.room.batch(() => {
+        ctx.framesMap!.set(frame.id, new LO({ ...frame }));
+      });
+      ctx.frames.push(frame);
+      const originX = frameOriginX(nextIndex);
+      return {
+        result: `Created frame "${label}" (id: ${frame.id}, index: ${nextIndex}). Origin: (${originX}, ${FRAME_ORIGIN_Y}). Place objects within x: ${originX}–${originX + 4000}, y: ${FRAME_ORIGIN_Y}–${FRAME_ORIGIN_Y + 3000}.`,
+      };
     }
 
     case "deleteObject": {

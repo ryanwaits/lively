@@ -130,6 +130,18 @@ export const AI_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "createFrame",
+    description:
+      "Create a new frame on the whiteboard. Frames are 4000x3000 canvases laid out horizontally. Position is automatic based on index — you only need to provide an optional label. The result includes the frame's origin coordinates so you can place objects inside it.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        label: { type: "string", description: "Display label for the frame (default: 'Frame N')" },
+      },
+      required: [],
+    },
+  },
+  {
     name: "getBoardState",
     description:
       "Get the current state of all objects on the board. Use this to refresh your view after making changes.",
