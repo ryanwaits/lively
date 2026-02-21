@@ -177,11 +177,11 @@ export class Room {
     const idx = this.presence.findIndex((u) => u.userId === this.userId);
     if (idx !== -1) {
       const self = { ...this.presence[idx] };
-      if (data.location !== undefined) self.location = data.location;
-      if (data.metadata !== undefined) {
+      if ("location" in data) self.location = data.location;
+      if ("metadata" in data) {
         self.metadata = { ...((self.metadata as Record<string, unknown>) ?? {}), ...data.metadata };
       }
-      if (data.onlineStatus !== undefined) self.onlineStatus = data.onlineStatus;
+      if ("onlineStatus" in data) self.onlineStatus = data.onlineStatus;
       this.presence = [...this.presence];
       this.presence[idx] = self as PresenceUser;
       this.emitter.emit("presence", this.presence);
