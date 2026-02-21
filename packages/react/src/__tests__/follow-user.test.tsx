@@ -29,49 +29,65 @@ function wrapper({ children }: { children: any }) {
 }
 
 describe("useFollowUser", () => {
-  it("followUser calls room.followUser", () => {
+  it("followUser calls room.followUser and sets local state", async () => {
     setup();
-    const { result } = renderHook(() => useFollowUser(), { wrapper });
-
-    act(() => result.current.followUser("bob"));
-    expect(mockRoom.followUser).toHaveBeenCalledWith("bob");
-  });
-
-  it("stopFollowing calls room.stopFollowing", () => {
-    setup();
-    const { result } = renderHook(() => useFollowUser(), { wrapper });
-
-    act(() => result.current.stopFollowing());
-    expect(mockRoom.stopFollowing).toHaveBeenCalledTimes(1);
-  });
-
-  it("followingUserId reflects room.getFollowing", async () => {
-    setup();
+    mockRoom.setOthers([{ userId: "bob", displayName: "Bob" }]);
     const { result } = renderHook(() => useFollowUser(), { wrapper });
     expect(result.current.followingUserId).toBeNull();
 
-    await act(() => {
-      (mockRoom.getFollowing as any).mockImplementation(() => "bob");
+    await act(async () => result.current.followUser("bob"));
+    expect(mockRoom.followUser).toHaveBeenCalledWith("bob");
+    expect(result.current.followingUserId).toBe("bob");
+  });
+
+  it("stopFollowing calls room.stopFollowing and clears local state", async () => {
+    setup();
+    mockRoom.setOthers([{ userId: "bob", displayName: "Bob" }]);
+    const { result } = renderHook(() => useFollowUser(), { wrapper });
+
+    await act(async () => result.current.followUser("bob"));
+    expect(result.current.followingUserId).toBe("bob");
+
+    await act(async () => result.current.stopFollowing());
+    expect(mockRoom.stopFollowing).toHaveBeenCalledTimes(1);
+    expect(result.current.followingUserId).toBeNull();
+  });
+
+  it("followingUserId is not cleared by server presence broadcasts", async () => {
+    setup();
+    mockRoom.setOthers([{ userId: "bob", displayName: "Bob" }]);
+    const { result } = renderHook(() => useFollowUser(), { wrapper });
+
+    // Follow bob — local state should be immediate
+    await act(async () => result.current.followUser("bob"));
+    expect(result.current.followingUserId).toBe("bob");
+
+    // Simulate server presence broadcast (could arrive with stale metadata)
+    await act(async () => {
       mockRoom.emit("presence", []);
     });
+
+    // Local state should survive the broadcast
     expect(result.current.followingUserId).toBe("bob");
   });
 
   it("calls onViewportChange when target cursor has viewport data", async () => {
     setup();
     const onViewportChange = mock(() => {});
-    (mockRoom.getFollowing as any).mockImplementation(() => "bob");
+
+    // Set others so bob is present
+    mockRoom.setOthers([{ userId: "bob", displayName: "Bob" }]);
 
     const { result } = renderHook(
       () => useFollowUser({ onViewportChange }),
       { wrapper }
     );
 
-    // Emit presence to set following state
-    await act(() => mockRoom.emit("presence", []));
+    // Follow bob via local state
+    await act(async () => result.current.followUser("bob"));
 
     // Emit cursor with viewport data
-    await act(() => {
+    await act(async () => {
       mockRoom.setCursors(
         new Map([
           [
@@ -98,27 +114,28 @@ describe("useFollowUser", () => {
   it("auto-exits when target disconnects", async () => {
     setup();
     const onAutoExit = mock(() => {});
-    (mockRoom.getFollowing as any).mockImplementation(() => "bob");
 
-    renderHook(
+    // Set others including bob
+    mockRoom.setOthers([{ userId: "bob", displayName: "Bob" }]);
+
+    const { result } = renderHook(
       () => useFollowUser({ onAutoExit }),
       { wrapper }
     );
 
-    // Set others including bob, then emit presence
-    await act(() => {
-      mockRoom.setOthers([{ userId: "bob", displayName: "Bob" }]);
-      mockRoom.emit("presence", []);
-    });
+    // Follow bob
+    await act(async () => result.current.followUser("bob"));
+    expect(result.current.followingUserId).toBe("bob");
 
     // Now bob leaves
-    await act(() => {
+    await act(async () => {
       mockRoom.setOthers([]);
       mockRoom.emit("presence", []);
     });
 
     expect(mockRoom.stopFollowing).toHaveBeenCalled();
     expect(onAutoExit).toHaveBeenCalledWith("disconnected");
+    expect(result.current.followingUserId).toBeNull();
   });
 
   it("followers array updates when others follow/unfollow", async () => {
@@ -127,7 +144,7 @@ describe("useFollowUser", () => {
     expect(result.current.followers).toEqual([]);
     expect(result.current.isBeingFollowed).toBe(false);
 
-    await act(() => {
+    await act(async () => {
       (mockRoom.getFollowers as any).mockImplementation(() => ["bob", "carol"]);
       mockRoom.emit("presence", []);
     });
