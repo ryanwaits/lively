@@ -11,6 +11,19 @@ export type { ToolbarProps, ToolbarButtonProps } from "./toolbar.js";
 export { FloatingToolbar } from "./floating-toolbar.js";
 export type { FloatingToolbarProps } from "./floating-toolbar.js";
 
+export { createSlashCommandExtension } from "./slash-command.js";
+export type { SlashMenuItem } from "./slash-command.js";
+
+export { Callout } from "./callout.js";
+export type { CalloutType, CalloutOptions } from "./callout.js";
+
+export { ImagePlaceholder } from "./image-placeholder.js";
+
+export { createCodeBlockExtension } from "./code-block-language.js";
+
+export { BlockHandle } from "./block-handle.js";
+export type { BlockHandleProps } from "./block-handle.js";
+
 /**
  * Cursor CSS — add these styles to your `globals.css` for collaborative cursors:
  *
