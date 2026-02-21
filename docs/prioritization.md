@@ -10,14 +10,14 @@ Audit of openblocks SDK against Velt's realtime collaboration surface. Goal: ide
 |---------|------|------------|--------|
 | Presence (online users) | Full | Partial | Enhance |
 | Cursors | Full | Full | Enhance |
-| Follow Me Mode | Full | Wire-only | Build |
+| Follow Me Mode | Full | Full | Shipped — [`useFollowUser`](./hooks/use-follow-user.md) |
 | Live Selection | Full | None | Build |
 | Live State Sync | Full | None | Build |
 | Single Editor Mode | Full | None | Build |
-| Multiplayer Editing (CRDT) | Yjs-based | Custom CRDT | Enhance |
+| Multiplayer Editing (CRDT) | Yjs-based | Custom CRDT + Yjs integration | Shipped — [`@waits/openblocks-yjs`](./packages/yjs.md), [`react-tiptap`](./packages/react-tiptap.md), [`react-codemirror`](./packages/react-codemirror.md) |
 | Video Player Sync | Full | None | Build |
 | Huddle (Audio/Video) | Full | None | Defer |
-| Undo/Redo | App-layer | None | Build |
+| Undo/Redo | App-layer | Full | Shipped — CRDT undo/redo + Yjs undo/redo via [`yjsUndo`/`yjsRedo`](./packages/react-tiptap.md) |
 | Version History | Full | None | Build |
 | Comments/Annotations | Full | None | Defer |
 
@@ -128,12 +128,12 @@ Cursors use absolute coordinates. No adaptation for different viewport sizes.
 
 ### Current State
 - Wire protocol carries `viewportPos` + `viewportScale` on cursor messages
-- App-layer follow implemented in whiteboard example (`useFollowUser`)
-- No SDK-level abstraction
+- SDK-level `useFollowUser()` hook in `@waits/openblocks-react` — see [docs](./hooks/use-follow-user.md)
+- Smooth 60fps viewport interpolation with configurable `lerpFactor`
+- Auto-exit on target disconnect or user interaction
+- Follower tracking via presence metadata
 
-### Implementation Plan
-
-Move follow logic into the SDK as a first-class feature.
+### Implementation Plan (Shipped)
 
 **3a. Core Hook: `useFollowUser()`**
 ```ts
@@ -375,7 +375,8 @@ const {
 - `LiveObject`, `LiveMap`, `LiveList` with Lamport clock LWW
 - `StorageDocument` with serialize/deserialize
 - Batch operations, deep subscriptions
-- No undo/redo, no version history, no text CRDT
+- CRDT undo/redo via `useUndo()`/`useRedo()`/`useHistory()`
+- Yjs integration via `@waits/openblocks-yjs` for text CRDT — used by `react-tiptap` and `react-codemirror`
 
 ### Gaps
 

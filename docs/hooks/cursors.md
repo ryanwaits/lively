@@ -598,6 +598,12 @@ z-index stacking:
 </div>
 ```
 
+### Follow Mode
+
+The `viewportPos` and `viewportScale` fields on `CursorData` power the [follow user](./use-follow-user.md) feature. When a user broadcasts viewport data, other clients can mirror their exact view.
+
+> **See also:** [`useFollowUser`](./use-follow-user.md) — SDK-level hook for Figma-style follow mode with smooth viewport interpolation.
+
 ### Combining with Presence
 
 Cursors and presence are complementary. Use `useCursors()` for real-time pointer position and `useOthers()` for user metadata. The `CursorData` includes `displayName` and `color` from the user's presence, so you don't need to join the two manually in most cases.

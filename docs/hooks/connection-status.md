@@ -515,6 +515,13 @@ Client                                  Server
 
 ---
 
+## See Also
+
+- [`ConnectionBadge`](#connectionbadge) is documented above in this file.
+- [CollabPills](../components/collab-pills.md) — name pills component that pairs well with `ConnectionBadge` in toolbar layouts.
+
+---
+
 ## Patterns & Tips
 
 - **Always show connection state somewhere in the UI.** Users need to know if their changes are syncing. `ConnectionBadge` is zero-effort -- it renders nothing when connected and shows a pill when something is wrong.

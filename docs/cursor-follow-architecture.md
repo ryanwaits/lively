@@ -1,6 +1,6 @@
 # Cursor Follow Architecture
 
-Figma-style "follow user" — mirror another user's viewport so you see exactly what they see. The library provides viewport data on the wire; follow UX is app-layer.
+Figma-style "follow user" — mirror another user's viewport so you see exactly what they see. The SDK provides `useFollowUser` for follow logic, and viewport data rides on the cursor wire protocol.
 
 ## Layer Overview
 
@@ -18,13 +18,14 @@ Figma-style "follow user" — mirror another user's viewport so you see exactly 
 │  Room     │   │  broadcast │   │  useCursors  │
 │  class    │──▶│  + enrich  │──▶│  useUpdate   │
 └──────────┘   └────────────┘   │  Cursor      │
+                                │  useFollow   │
+                                │  User        │
                                 └──────────────┘
                                        │
                         ┌──────────────┘
                         ▼
               ┌─────────────────────┐
               │  App layer (example) │
-              │  useFollowUser()    │
               │  useBoardMutations  │
               │  OnlineUsers UI     │
               └─────────────────────┘
@@ -62,7 +63,19 @@ Two hooks (exported from `@waits/openblocks-react`):
 - **`useCursors()`** — subscribes to the cursors map via `useSyncExternalStore`. Equality check includes `viewportPos` and `viewportScale` fields, so viewport changes trigger re-renders.
 - **`useUpdateCursor()`** — stable callback wrapping `room.updateCursor()`. Accepts optional viewport args: `(x, y, viewportPos?, viewportScale?)`.
 
-**These four packages are the library.** No follow logic, no UI opinions. Viewport data rides on the cursor wire protocol as opt-in fields.
+**These four packages are the library.** Viewport data rides on the cursor wire protocol as opt-in fields.
+
+## packages/react — `useFollowUser`
+
+The SDK provides `useFollowUser()` as a first-class hook in `@waits/openblocks-react`. It handles all follow logic:
+
+1. **Follow state** — `followUser(userId)` / `stopFollowing()`, broadcasts via presence metadata
+2. **Viewport sync** — subscribes to the target's cursor data, reads `viewportPos` + `viewportScale`
+3. **Smooth interpolation** — 60fps lerp loop via `requestAnimationFrame`, configurable `lerpFactor`
+4. **Auto-exit** — exits when target disconnects (presence-based) or on user interaction (wheel/pointerdown)
+5. **Follower tracking** — `followers: string[]` derived from others' presence metadata
+
+See [`useFollowUser` docs](./hooks/use-follow-user.md) for full API reference.
 
 ## App layer (examples/nextjs-whiteboard)
 
@@ -82,22 +95,15 @@ const updateCursor = useCallback(
 
 Every cursor broadcast includes current pan + zoom — no separate viewport message needed.
 
-### use-follow-user.ts
-
-The follow logic hook. Consumes `useCursors()` + `useOthers()`:
-
-1. **Auto-exit** — if followed user disconnects (presence-based), calls `onAutoExit()`
-2. **Viewport sync** — reads `cursor.viewportPos` + `cursor.viewportScale` for the followed user, calls `applyViewport(pos, scale)` to set the local camera
-
 ### online-users.tsx
 
-Pure UI. Avatar click opens dropdown with "Follow [Name]" / "Stop following". Sets `followingUserId` state — no cursor logic.
+Pure UI. Avatar click opens dropdown with "Follow [Name]" / "Stop following". Calls `followUser()` / `stopFollowing()` from the SDK hook.
 
 ### page.tsx (board/[id])
 
 Wires everything together:
 
-- **State**: `followingUserId` + `useFollowUser` hook
+- **State**: `useFollowUser` hook with `onViewportChange` callback
 - **Viewport broadcast**: subscribes to viewport store — re-broadcasts cursor+viewport on every pan/zoom
 - **Join broadcast**: re-broadcasts current state when a new user joins so they can follow immediately
 - **Exit triggers**: Escape key, badge ✕ button, dropdown "Stop following"
@@ -119,10 +125,10 @@ User B moves mouse / pans / zooms
 
 ## Consumer Guide
 
-The library gives you the plumbing. A consumer building on openblocks would:
+A consumer building on openblocks would:
 
 1. **Send viewport data** — pass `viewportPos` and `viewportScale` when calling `useUpdateCursor()` (or wrap it like `useBoardMutations` does)
-2. **Build follow logic** — read `cursor.viewportPos`/`cursor.viewportScale` from the `useCursors()` map and apply to your camera (see `use-follow-user.ts` as reference)
-3. **Build follow UI** — trigger follow/unfollow from your own presence component
+2. **Use `useFollowUser()`** — the SDK hook handles viewport sync, lerp interpolation, auto-exit, and follower tracking. Provide an `onViewportChange` callback to apply the followed user's viewport to your camera.
+3. **Build follow UI** — trigger `followUser(userId)` / `stopFollowing()` from your own presence component
 
-The library handles throttling, broadcasting, server enrichment, and reactive subscriptions. Follow UX is yours to build.
+The library handles throttling, broadcasting, server enrichment, interpolation, and reactive subscriptions.

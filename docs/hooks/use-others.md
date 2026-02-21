@@ -499,6 +499,12 @@ function SelectionOverlay({ selections }: {
 
 ---
 
+## See Also
+
+- [CollabPills](../components/collab-pills.md) — pre-built colored name pill component for showing all users in a room. Uses `useOthers()` and `useSelf()` internally.
+
+---
+
 ## Patterns & Tips
 
 ### Always handle the null case for `useSelf`
