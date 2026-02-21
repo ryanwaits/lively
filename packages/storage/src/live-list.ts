@@ -128,6 +128,12 @@ export class LiveList<T = unknown> extends AbstractCrdt {
     return this._items[index]?.value;
   }
 
+  /** Look up a child by its fractional-index position key (used for path resolution). */
+  _getByPosition(position: string): T | undefined {
+    const entry = this._items.find((e) => e.position === position);
+    return entry?.value;
+  }
+
   get length(): number {
     return this._items.length;
   }
@@ -166,7 +172,7 @@ export class LiveList<T = unknown> extends AbstractCrdt {
       if (this._items.some((e) => e.position === insertOp.position)) {
         return false;
       }
-      const value = deserializeValue(insertOp.value) as T;
+      const value = (this._doc ? this._doc._deserializeValue(insertOp.value) : deserializeValue(insertOp.value)) as T;
       if (value instanceof AbstractCrdt) {
         (value as AbstractCrdt)._attach(
           this._doc!,

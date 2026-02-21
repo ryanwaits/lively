@@ -288,7 +288,9 @@ export class StorageDocument implements StorageDocumentHost {
     if (node instanceof LiveMap) {
       return node.get(key);
     }
-    // LiveList children are accessed by position, but ops target the list itself
+    if (node instanceof LiveList) {
+      return node._getByPosition(key);
+    }
     return null;
   }
 }
