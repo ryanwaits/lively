@@ -5,7 +5,7 @@ interface ViewportState {
   pos: { x: number; y: number };
   setViewport: (pos: { x: number; y: number }, scale: number) => void;
   saveForBoard: (boardId: string) => void;
-  restoreForBoard: (boardId: string, fallbackPos: { x: number; y: number }) => { pos: { x: number; y: number }; scale: number } | null;
+  restoreForBoard: (boardId: string, fallbackPos?: { x: number; y: number }) => { pos: { x: number; y: number }; scale: number } | null;
 }
 
 function storageKey(boardId: string) {

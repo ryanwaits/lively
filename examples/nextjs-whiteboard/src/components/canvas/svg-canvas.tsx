@@ -204,11 +204,21 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
     }
   }, []);
 
-  // On initial render, navigate to last active frame at 100% zoom
+  // On initial render, restore saved viewport or fall back to frame centering
   useEffect(() => {
     if (dimensions.width > 0 && !initialized.current && frames.length > 0) {
       initialized.current = true;
 
+      // Try restoring the exact viewport the user had last session
+      if (boardId) {
+        const saved = useViewportStore.getState().restoreForBoard(boardId);
+        if (saved) {
+          applyTransform(saved.pos, saved.scale);
+          return;
+        }
+      }
+
+      // First visit / cleared storage — center on active frame
       const frameIndex = boardId
         ? useFrameStore.getState().restoreActiveFrame(boardId)
         : 0;
