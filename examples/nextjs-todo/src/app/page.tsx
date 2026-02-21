@@ -21,6 +21,7 @@ import {
   useEventListener,
   useLostConnectionListener,
   useErrorListener,
+  useOthersListener,
   ClientSideSuspense,
 } from "@waits/openblocks-react";
 import {
@@ -125,12 +126,12 @@ function TodoSkeleton() {
 interface Toast {
   id: string;
   message: string;
-  type: "warning" | "error";
+  type: "info" | "warning" | "error";
 }
 
 function useToasts() {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const addToast = useCallback((message: string, type: "warning" | "error") => {
+  const addToast = useCallback((message: string, type: Toast["type"]) => {
     const id = crypto.randomUUID();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -181,6 +182,15 @@ function TodoContent() {
   });
   useErrorListener((err) => {
     addToast(err.message, "error");
+  });
+
+  // Join/leave notifications
+  useOthersListener((event) => {
+    if (event.type === "enter") {
+      addToast(`${event.user.displayName} joined`, "info");
+    } else if (event.type === "leave") {
+      addToast(`${event.user.displayName} left`, "info");
+    }
   });
 
   // Celebration event listener
@@ -327,13 +337,13 @@ function TodoContent() {
     updateTodoText(editingId, editText.trim());
     setEditingId(null);
     setEditText("");
-    updatePresence({ location: undefined });
+    updatePresence({ location: "" });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditText("");
-    updatePresence({ location: undefined });
+    updatePresence({ location: "" });
   };
 
   const userCount = (self ? 1 : 0) + others.length;
@@ -357,9 +367,11 @@ function TodoContent() {
             <div
               key={toast.id}
               className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-lg ${
-                toast.type === "warning"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : "bg-red-100 text-red-800"
+                toast.type === "info"
+                  ? "bg-blue-100 text-blue-800"
+                  : toast.type === "warning"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-red-100 text-red-800"
               }`}
             >
               <span className="flex-1">{toast.message}</span>
@@ -431,7 +443,7 @@ function TodoContent() {
               </button>
 
               {showPresencePanel && (
-                <div className="absolute right-0 top-full mt-1 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
+                <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
                   {self && (
                     <PresenceRow user={self} isSelf />
                   )}
@@ -659,8 +671,13 @@ function PresenceRow({ user, isSelf }: { user: PresenceUser; isSelf?: boolean })
         {user.displayName}
         {isSelf && <span className="ml-1 text-gray-400">(you)</span>}
       </span>
+      {user.onlineStatus !== "online" && (
+        <span className="text-[10px] text-gray-400">
+          {user.onlineStatus === "away" ? "idle" : "offline"}
+        </span>
+      )}
       <span
-        className={`h-2 w-2 rounded-full ${
+        className={`h-2 w-2 shrink-0 rounded-full ${
           user.onlineStatus === "online"
             ? "bg-green-500"
             : user.onlineStatus === "away"
