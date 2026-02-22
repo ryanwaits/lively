@@ -19,6 +19,11 @@ import { ZoomControls } from "@/components/canvas/zoom-controls";
 import { CursorsOverlay } from "@/components/presence/cursors-overlay";
 import { useNodeDrag } from "@/hooks/use-node-drag";
 import { useConnectionDraw } from "@/hooks/use-connection-draw";
+import { useStreamDeploy } from "@/hooks/use-stream-deploy";
+import { useStreamPolling } from "@/hooks/use-stream-polling";
+import { StreamMetrics } from "@/components/topbar/stream-metrics";
+import { StreamErrorBanner } from "@/components/topbar/stream-error-banner";
+import { DeliveryLogPanel } from "@/components/panels/delivery-log-panel";
 import { useWorkflowStore } from "@/lib/store/workflow-store";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -60,11 +65,13 @@ export default function WorkflowPage() {
 
 function WorkflowPageInner({ workflowId }: { workflowId: string }) {
   const canvasRef = useRef<CanvasHandle>(null);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null);
   const selectNode = useWorkflowStore((s) => s.selectNode);
   const selectEdge = useWorkflowStore((s) => s.selectEdge);
-  const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
-  const [workflowName, setWorkflowName] = useState("Untitled Workflow");
+  const openConfig = useWorkflowStore((s) => s.openConfig);
+  const configNodeId = useWorkflowStore((s) => s.configNodeId);
+  const [deliveryLogOpen, setDeliveryLogOpen] = useState(false);
+  const workflowName = useWorkflowStore((s) => s.meta.name);
   const lastCursorRef = useRef<{ x: number; y: number } | null>(null);
 
   // --- Lively sync ---
@@ -99,29 +106,33 @@ function WorkflowPageInner({ workflowId }: { workflowId: string }) {
     });
   }, [mutations]);
 
-  // --- SVG ref: one-shot acquisition after canvas mounts ---
+  // --- SVG element: state-based so hooks re-run when available ---
   useEffect(() => {
-    // Check once synchronously, then poll briefly until available
     const el = canvasRef.current?.getSvgElement();
-    if (el) { svgRef.current = el; return; }
+    if (el) { setSvgElement(el); return; }
     const interval = setInterval(() => {
       const el = canvasRef.current?.getSvgElement();
       if (el) {
-        svgRef.current = el;
+        setSvgElement(el);
         clearInterval(interval);
       }
     }, 50);
     return () => clearInterval(interval);
   }, []);
 
+  // --- Stream deploy + polling ---
+  const { deploy, enable, disable, remove, deploying } = useStreamDeploy(mutations);
+  useStreamPolling(mutations);
+
   // --- Hooks that mutate via Lively ---
-  useNodeDrag(svgRef, mutations);
-  const { handlePortPointerDown } = useConnectionDraw(svgRef, mutations);
+  useNodeDrag(svgElement, mutations);
+  const { handlePortPointerDown } = useConnectionDraw(svgElement, mutations);
 
   const handleCanvasClick = useCallback(() => {
     selectNode(null);
     selectEdge(null);
-  }, [selectNode, selectEdge]);
+    openConfig(null);
+  }, [selectNode, selectEdge, openConfig]);
 
   // Drop from palette → create node via Lively mutation
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -129,7 +140,7 @@ function WorkflowPageInner({ workflowId }: { workflowId: string }) {
     const type = e.dataTransfer.getData("text/plain") as WorkflowNodeType;
     if (!type || !NODE_DEFINITIONS[type]) return;
 
-    const svg = svgRef.current;
+    const svg = svgElement;
     if (!svg) return;
     const { pos, scale } = useViewportStore.getState();
     const rect = svg.getBoundingClientRect();
@@ -143,7 +154,7 @@ function WorkflowPageInner({ workflowId }: { workflowId: string }) {
       position: { x: canvasPos.x - 140, y: canvasPos.y - 40 },
       config: { ...def.defaultConfig } as WorkflowNode["config"],
     });
-  }, [mutations]);
+  }, [mutations, svgElement]);
 
   // --- Keyboard shortcuts ---
   useEffect(() => {
@@ -168,6 +179,7 @@ function WorkflowPageInner({ workflowId }: { workflowId: string }) {
       if (e.key === "Escape") {
         useWorkflowStore.getState().selectNode(null);
         useWorkflowStore.getState().selectEdge(null);
+        useWorkflowStore.getState().openConfig(null);
       }
     };
     window.addEventListener("keydown", handler);
@@ -185,7 +197,7 @@ function WorkflowPageInner({ workflowId }: { workflowId: string }) {
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
         onPointerMove={(e) => {
-          const svg = svgRef.current;
+          const svg = svgElement;
           if (!svg) return;
           const { pos, scale } = useViewportStore.getState();
           const rect = svg.getBoundingClientRect();
@@ -196,11 +208,15 @@ function WorkflowPageInner({ workflowId }: { workflowId: string }) {
       >
         <WorkflowTopbar
           workflowName={workflowName}
-          onNameChange={(name) => {
-            setWorkflowName(name);
-            mutations.updateMeta({ name });
-          }}
+          onNameChange={(name) => mutations.updateMeta({ name })}
+          onDeploy={deploy}
+          onEnable={enable}
+          onDisable={disable}
+          onDelete={remove}
+          deploying={deploying}
         />
+
+        <StreamErrorBanner onRetry={deploy} onDismiss={() => mutations.updateStream({ errorMessage: null })} />
 
         {/* Connection status */}
         <div className="absolute right-4 top-4 z-30 flex items-center gap-2">
@@ -223,10 +239,19 @@ function WorkflowPageInner({ workflowId }: { workflowId: string }) {
           onZoomOut={() => canvasRef.current?.zoomOut()}
           onReset={() => canvasRef.current?.resetZoom()}
         />
+
+        <div className="absolute bottom-4 right-4 z-30">
+          <StreamMetrics onClick={() => setDeliveryLogOpen(!deliveryLogOpen)} />
+        </div>
       </div>
 
-      {/* Right sidebar: Config panel */}
-      {selectedNodeId && <NodeConfigPanel mutations={mutations} />}
+      {/* Right sidebar: Config panel (double-click to open) */}
+      {/* Right sidebar: Config panel or Delivery log */}
+      {deliveryLogOpen ? (
+        <DeliveryLogPanel onClose={() => setDeliveryLogOpen(false)} />
+      ) : configNodeId ? (
+        <NodeConfigPanel mutations={mutations} />
+      ) : null}
     </div>
   );
 }
