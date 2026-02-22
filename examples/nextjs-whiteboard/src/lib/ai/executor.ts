@@ -3,6 +3,7 @@ import { LiveObject as LO } from "@waits/lively-storage";
 import type { BoardObject, Frame } from "@/types/board";
 import { serializeBoardState, serializeFrameState } from "./system-prompt";
 import { computeEdgePoint, computeLineBounds } from "@/lib/geometry/edge-intersection";
+import { rdpSimplify } from "@/lib/geometry/simplify";
 import { frameOriginX, FRAME_ORIGIN_Y } from "@/lib/geometry/frames";
 import { cascadeDeleteFrame } from "@/lib/sync/cascade-delete-frame";
 
@@ -263,6 +264,56 @@ export async function executeToolCall(
       ctx.frames.splice(idx, 1);
       ctx.objects = ctx.objects.filter((o) => ctx.objectsMap.has(o.id));
       return { result: `Deleted frame ${frameId} and all contained objects` };
+    }
+
+    case "addStamp": {
+      const emojiType = toolInput.emoji_type as string;
+      const targetId = toolInput.targetObjectId as string | undefined;
+      let x = toolInput.x as number | undefined;
+      let y = toolInput.y as number | undefined;
+
+      if (targetId) {
+        const target = ctx.objects.find((o) => o.id === targetId);
+        if (!target) return { result: `Error: target object ${targetId} not found` };
+        x = target.x + target.width - 20 + (Math.random() * 30 - 15);
+        y = target.y - 12 + (Math.random() * 30 - 15);
+      }
+
+      const obj = makeObject(ctx, {
+        type: "emoji",
+        x,
+        y,
+        width: 64,
+        height: 64,
+        color: "transparent",
+      });
+      obj.emoji_type = emojiType;
+      crdtCreate(ctx, obj);
+      return { result: `Added ${emojiType} stamp (id: ${obj.id})${targetId ? ` on ${targetId}` : ""}`, objects: [obj] };
+    }
+
+    case "createDrawing": {
+      const rawPoints = toolInput.points as Array<{ x: number; y: number }>;
+      if (!rawPoints || rawPoints.length < 2) {
+        return { result: "Error: points array must have at least 2 points" };
+      }
+
+      const points = rdpSimplify(rawPoints, 1.5);
+      const bounds = computeLineBounds(points);
+
+      const obj = makeObject(ctx, {
+        type: "drawing",
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width || 1,
+        height: bounds.height || 1,
+        color: "transparent",
+      });
+      obj.points = points;
+      obj.stroke_color = (toolInput.stroke_color as string) || "#374151";
+      obj.stroke_width = (toolInput.stroke_width as number) || 2;
+      crdtCreate(ctx, obj);
+      return { result: `Created drawing with ${points.length} points (id: ${obj.id})`, objects: [obj] };
     }
 
     case "getBoardState": {

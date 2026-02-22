@@ -154,6 +154,51 @@ export const AI_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "addStamp",
+    description:
+      "Place an emoji stamp/reaction on the whiteboard. Optionally attach to an existing object (auto-offsets to corner with jitter).",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        emoji_type: {
+          type: "string",
+          enum: ["thumbsup", "heart", "fire", "star", "eyes", "laughing", "party", "plusone"],
+          description: "Which emoji to place",
+        },
+        x: { type: "number", description: "X position (ignored if targetObjectId provided)" },
+        y: { type: "number", description: "Y position (ignored if targetObjectId provided)" },
+        targetObjectId: {
+          type: "string",
+          description: "ID of an existing object to stick the stamp on (auto-offsets to top-right corner)",
+        },
+      },
+      required: ["emoji_type"],
+    },
+  },
+  {
+    name: "createDrawing",
+    description:
+      "Create a freehand drawing/stroke from a point array. Each call = one stroke. Points are auto-simplified. Use 15-40 points for curves, 2-5 for straight segments.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        points: {
+          type: "array",
+          items: {
+            type: "object" as const,
+            properties: { x: { type: "number" }, y: { type: "number" } },
+            required: ["x", "y"],
+          },
+          minItems: 2,
+          description: "Array of {x, y} points defining the stroke path",
+        },
+        stroke_color: { type: "string", description: "Stroke color hex. Default: #374151" },
+        stroke_width: { type: "number", description: "Stroke width in pixels. Default: 2" },
+      },
+      required: ["points"],
+    },
+  },
+  {
     name: "getBoardState",
     description:
       "Get current board state. Only use if you need to re-check object positions before modifying them.",

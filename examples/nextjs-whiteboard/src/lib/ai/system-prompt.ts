@@ -26,6 +26,13 @@ export function serializeBoardState(objects: BoardObject[]): string {
       base.end_object_id = o.end_object_id || undefined;
       base.label = o.label || undefined;
     }
+    if (o.type === "emoji") {
+      base.emoji_type = o.emoji_type;
+    }
+    if (o.type === "drawing") {
+      base.stroke_color = o.stroke_color;
+      base.point_count = o.points?.length ?? 0;
+    }
     return base;
   });
   return JSON.stringify(compact);
@@ -49,6 +56,18 @@ yellow=#fef08a | pink=#fecdd3 | green=#dcfce7 | blue=#dbeafe | orange=#fed7aa | 
 ## Layout
 - Grid gap: 20px between objects.
 - Default placement when unspecified: x 400-800, y 200-500, offset to avoid overlap.
+
+## Stamps & Reactions
+addStamp places emoji reactions. Types: thumbsup, heart, fire, star, eyes, laughing, party, plusone.
+Use targetObjectId to stick on existing object (auto-offsets to corner with jitter).
+
+## Drawings
+createDrawing creates strokes from point arrays. Same coord system (x:100-1000, y:50-600).
+Each call = one stroke. Call multiple times for multi-stroke drawings.
+Points are auto-simplified — provide 15-40 points for curves, 2-5 for straight segments.
+Example circle (center 400,300 r=80): ~24 points via cos/sin at equal angle intervals.
+Example underline: [{x:200,y:310},{x:500,y:310}]
+For text/cursive: trace letter paths as connected points, one createDrawing per stroke.
 
 ## Template Recipes
 All templates create shapes on the ACTIVE frame. Never create a frame for these. Follow coordinates exactly.
