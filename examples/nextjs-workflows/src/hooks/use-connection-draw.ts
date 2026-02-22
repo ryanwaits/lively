@@ -13,12 +13,14 @@ import { NODE_WIDTH } from "@/components/nodes/base-node";
 import type { WorkflowMutationsApi } from "@/lib/sync/mutations-context";
 
 export function useConnectionDraw(
-  svgRef: React.RefObject<SVGSVGElement | null>,
+  svgElement: SVGSVGElement | null,
   mutations: WorkflowMutationsApi,
 ) {
   const drawingRef = useRef(false);
   const mutationsRef = useRef(mutations);
   mutationsRef.current = mutations;
+  const svgElRef = useRef(svgElement);
+  svgElRef.current = svgElement;
 
   const handlePortPointerDown = useCallback(
     (nodeId: string, portId: string, e: React.PointerEvent) => {
@@ -30,7 +32,7 @@ export function useConnectionDraw(
       e.stopPropagation();
       e.preventDefault();
 
-      const svg = svgRef.current;
+      const svg = svgElRef.current;
       if (!svg) return;
       const { pos, scale } = useViewportStore.getState();
       const rect = svg.getBoundingClientRect();
@@ -44,13 +46,13 @@ export function useConnectionDraw(
       });
       drawingRef.current = true;
     },
-    [svgRef],
+    [],
   );
 
   useEffect(() => {
     const handleMove = (e: PointerEvent) => {
       if (!drawingRef.current) return;
-      const svg = svgRef.current;
+      const svg = svgElRef.current;
       if (!svg) return;
       const { pos, scale } = useViewportStore.getState();
       const rect = svg.getBoundingClientRect();
@@ -72,7 +74,7 @@ export function useConnectionDraw(
       if (!draft) return;
       useCanvasInteractionStore.getState().setConnectionDraft(null);
 
-      const svg = svgRef.current;
+      const svg = svgElRef.current;
       if (!svg) return;
       const { pos, scale } = useViewportStore.getState();
       const rect = svg.getBoundingClientRect();
@@ -126,7 +128,7 @@ export function useConnectionDraw(
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
     };
-  }, [svgRef]);
+  }, [svgElement]);
 
   return { handlePortPointerDown };
 }

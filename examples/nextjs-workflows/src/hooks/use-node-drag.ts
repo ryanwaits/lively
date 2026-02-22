@@ -6,8 +6,10 @@ import { useViewportStore } from "@/lib/store/viewport-store";
 import { useWorkflowStore } from "@/lib/store/workflow-store";
 import type { WorkflowMutationsApi } from "@/lib/sync/mutations-context";
 
+const DBLCLICK_MS = 300;
+
 export function useNodeDrag(
-  svgRef: React.RefObject<SVGSVGElement | null>,
+  svgElement: SVGSVGElement | null,
   mutations: WorkflowMutationsApi,
 ) {
   const dragRef = useRef<{
@@ -19,6 +21,9 @@ export function useNodeDrag(
   } | null>(null);
   const mutationsRef = useRef(mutations);
   mutationsRef.current = mutations;
+  const svgElRef = useRef(svgElement);
+  svgElRef.current = svgElement;
+  const lastClickRef = useRef<{ nodeId: string; time: number } | null>(null);
 
   const handlePointerDown = useCallback(
     (e: PointerEvent) => {
@@ -33,8 +38,21 @@ export function useNodeDrag(
 
       const node = useWorkflowStore.getState().nodes.get(nodeId);
       if (!node) return;
-      const svg = svgRef.current;
+      const svg = svgElRef.current;
       if (!svg) return;
+
+      // Double-click detection → open config panel
+      const now = Date.now();
+      const last = lastClickRef.current;
+      if (last && last.nodeId === nodeId && now - last.time < DBLCLICK_MS) {
+        lastClickRef.current = null;
+        useWorkflowStore.getState().openConfig(nodeId);
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      lastClickRef.current = { nodeId, time: now };
+
       const { pos, scale } = useViewportStore.getState();
       const rect = svg.getBoundingClientRect();
       const canvasPos = screenToCanvas(e.clientX, e.clientY, rect, pos, scale);
@@ -50,13 +68,13 @@ export function useNodeDrag(
       e.preventDefault();
       e.stopPropagation();
     },
-    [svgRef],
+    [],
   );
 
   const handlePointerMove = useCallback(
     (e: PointerEvent) => {
       if (!dragRef.current) return;
-      const svg = svgRef.current;
+      const svg = svgElRef.current;
       if (!svg) return;
       const { pos, scale } = useViewportStore.getState();
       const rect = svg.getBoundingClientRect();
@@ -74,7 +92,7 @@ export function useNodeDrag(
         },
       });
     },
-    [svgRef],
+    [],
   );
 
   const handlePointerUp = useCallback(() => {
@@ -82,15 +100,14 @@ export function useNodeDrag(
   }, []);
 
   useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    svg.addEventListener("pointerdown", handlePointerDown, true);
+    if (!svgElement) return;
+    svgElement.addEventListener("pointerdown", handlePointerDown, true);
     window.addEventListener("pointermove", handlePointerMove);
     window.addEventListener("pointerup", handlePointerUp);
     return () => {
-      svg.removeEventListener("pointerdown", handlePointerDown, true);
+      svgElement.removeEventListener("pointerdown", handlePointerDown, true);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [svgRef, handlePointerDown, handlePointerMove, handlePointerUp]);
+  }, [svgElement, handlePointerDown, handlePointerMove, handlePointerUp]);
 }
