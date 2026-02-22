@@ -117,7 +117,7 @@ export function useLineDrawing(): UseLineDrawingReturn {
         points,
         stroke_color: "#374151",
         stroke_width: 2,
-        end_arrow: true,
+        end_arrow: false,
         start_object_id: startObjectId,
         end_object_id: endObjectId,
       };

@@ -3,6 +3,7 @@
 import { memo, useMemo, useCallback, useRef } from "react";
 import { computeEdgePoint, computeLineBounds } from "@/lib/geometry/edge-intersection";
 import { findSnapTarget } from "@/lib/geometry/snap";
+import { catmullRomToSvgPath, twoPointCurvedPath } from "@/lib/geometry/catmull-rom";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import type { BoardObject } from "@/types/board";
 
@@ -204,6 +205,13 @@ export const SvgLineShape = memo(function SvgLineShape({
   const strokeWidth = object.stroke_width || 2;
   const hasStartArrow = object.start_arrow ?? false;
   const hasEndArrow = object.end_arrow ?? false;
+  const isCurved = object.line_style === "curved";
+
+  const curvedPathD = isCurved
+    ? (resolvedPoints.length === 2
+        ? twoPointCurvedPath(resolvedPoints[0], resolvedPoints[1])
+        : catmullRomToSvgPath(resolvedPoints))
+    : null;
 
   return (
     <g
@@ -212,38 +220,74 @@ export const SvgLineShape = memo(function SvgLineShape({
     >
       {/* Selection highlight */}
       {isSelected && (
+        isCurved && curvedPathD ? (
+          <path
+            d={curvedPathD}
+            fill="none"
+            stroke="#3b82f6"
+            strokeWidth={strokeWidth + 6}
+            opacity={0.3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            pointerEvents="none"
+          />
+        ) : (
+          <polyline
+            points={polylinePoints}
+            fill="none"
+            stroke="#3b82f6"
+            strokeWidth={strokeWidth + 6}
+            opacity={0.3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            pointerEvents="none"
+          />
+        )
+      )}
+
+      {/* Invisible hit area */}
+      {isCurved && curvedPathD ? (
+        <path
+          d={curvedPathD}
+          fill="none"
+          stroke="transparent"
+          strokeWidth={20}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
         <polyline
           points={polylinePoints}
           fill="none"
-          stroke="#3b82f6"
-          strokeWidth={strokeWidth + 6}
-          opacity={0.3}
+          stroke="transparent"
+          strokeWidth={20}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+
+      {/* Main line */}
+      {isCurved && curvedPathD ? (
+        <path
+          d={curvedPathD}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          pointerEvents="none"
+        />
+      ) : (
+        <polyline
+          points={polylinePoints}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeLinejoin="round"
           pointerEvents="none"
         />
       )}
-
-      {/* Invisible hit area */}
-      <polyline
-        points={polylinePoints}
-        fill="none"
-        stroke="transparent"
-        strokeWidth={20}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* Main line */}
-      <polyline
-        points={polylinePoints}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        pointerEvents="none"
-      />
 
       {/* Start arrowhead */}
       {hasStartArrow && resolvedPoints.length >= 2 && (

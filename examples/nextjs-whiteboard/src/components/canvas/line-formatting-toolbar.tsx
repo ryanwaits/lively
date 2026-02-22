@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ArrowLeft, Minus } from "lucide-react";
+import { ArrowRight, ArrowLeft, Minus, Spline } from "lucide-react";
 import type { BoardObject } from "@/types/board";
 
 interface LineFormattingToolbarProps {
@@ -28,6 +28,7 @@ export function LineFormattingToolbar({
   const currentWidth = object.stroke_width || 2;
   const startArrow = object.start_arrow ?? false;
   const endArrow = object.end_arrow ?? false;
+  const lineStyle = object.line_style ?? "straight";
 
   return (
     <div
@@ -70,27 +71,54 @@ export function LineFormattingToolbar({
         ))}
       </div>
 
-      <div className="h-5 w-px bg-gray-200" />
+      {/* Line-only controls: style toggles + arrows */}
+      {object.type === "line" && (
+        <>
+          <div className="h-5 w-px bg-gray-200" />
 
-      {/* Arrow toggles */}
-      <button
-        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-          startArrow ? "bg-blue-100 text-blue-700" : "text-gray-400 hover:bg-gray-100"
-        }`}
-        onClick={() => onUpdate({ start_arrow: !startArrow })}
-        title="Start arrow"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-      </button>
-      <button
-        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-          endArrow ? "bg-blue-100 text-blue-700" : "text-gray-400 hover:bg-gray-100"
-        }`}
-        onClick={() => onUpdate({ end_arrow: !endArrow })}
-        title="End arrow"
-      >
-        <ArrowRight className="h-3.5 w-3.5" />
-      </button>
+          {/* Line style toggles */}
+          <button
+            className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+              lineStyle === "straight" ? "bg-blue-100 text-blue-700" : "text-gray-400 hover:bg-gray-100"
+            }`}
+            onClick={() => onUpdate({ line_style: "straight" })}
+            title="Straight"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <button
+            className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+              lineStyle === "curved" ? "bg-blue-100 text-blue-700" : "text-gray-400 hover:bg-gray-100"
+            }`}
+            onClick={() => onUpdate({ line_style: "curved" })}
+            title="Curved"
+          >
+            <Spline className="h-3.5 w-3.5" />
+          </button>
+
+          <div className="h-5 w-px bg-gray-200" />
+
+          {/* Arrow toggles */}
+          <button
+            className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+              startArrow ? "bg-blue-100 text-blue-700" : "text-gray-400 hover:bg-gray-100"
+            }`}
+            onClick={() => onUpdate({ start_arrow: !startArrow })}
+            title="Start arrow"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </button>
+          <button
+            className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+              endArrow ? "bg-blue-100 text-blue-700" : "text-gray-400 hover:bg-gray-100"
+            }`}
+            onClick={() => onUpdate({ end_arrow: !endArrow })}
+            title="End arrow"
+          >
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </>
+      )}
     </div>
   );
 }
