@@ -3,7 +3,7 @@
 import type { WorkflowNode } from "@/types/workflow";
 import type {
   EventTriggerConfig, StxFilterConfig, FtFilterConfig, NftFilterConfig,
-  ContractFilterConfig, PrintEventFilterConfig, TransformConfig, WebhookActionConfig,
+  ContractCallFilterConfig, ContractDeployFilterConfig, PrintEventFilterConfig, WebhookActionConfig,
 } from "@/types/node-configs";
 import { NODE_DEFINITIONS } from "@/lib/workflow/node-definitions";
 import { NodePort } from "./node-port";
@@ -13,11 +13,13 @@ import { createElement } from "react";
 const NODE_WIDTH = 280;
 const NODE_MIN_HEIGHT = 80;
 
+export type ExecutionState = "idle" | "active" | "error";
+
 function getConfigSummary(node: WorkflowNode): string {
   switch (node.type) {
     case "event-trigger": {
       const c = node.config as EventTriggerConfig;
-      return `Network: ${c.network}${c.startBlock ? ` from #${c.startBlock}` : ""}`;
+      return c.startBlock ? `from block #${c.startBlock}` : "Latest block";
     }
     case "stx-filter": {
       const c = node.config as StxFilterConfig;
@@ -25,27 +27,27 @@ function getConfigSummary(node: WorkflowNode): string {
     }
     case "ft-filter": {
       const c = node.config as FtFilterConfig;
-      return `${c.eventType}${c.contractId ? ` ${c.contractId.slice(0, 12)}...` : ""}`;
+      return `${c.eventType}${c.assetIdentifier ? ` ${c.assetIdentifier.slice(0, 12)}...` : ""}`;
     }
     case "nft-filter": {
       const c = node.config as NftFilterConfig;
-      return `${c.eventType}${c.contractId ? ` ${c.contractId.slice(0, 12)}...` : ""}`;
+      return `${c.eventType}${c.assetIdentifier ? ` ${c.assetIdentifier.slice(0, 12)}...` : ""}`;
     }
-    case "contract-filter": {
-      const c = node.config as ContractFilterConfig;
-      return c.contractId ? `${c.contractId.slice(0, 20)}...` : "No contract set";
+    case "contract-call-filter": {
+      const c = node.config as ContractCallFilterConfig;
+      return c.contractId ? `${c.contractId.slice(0, 20)}...` : "Any contract call";
+    }
+    case "contract-deploy-filter": {
+      const c = node.config as ContractDeployFilterConfig;
+      return c.deployer ? `${c.deployer.slice(0, 20)}...` : "Any deploy";
     }
     case "print-event-filter": {
       const c = node.config as PrintEventFilterConfig;
       return c.topic || c.contains || "No filter set";
     }
-    case "transform": {
-      const c = node.config as TransformConfig;
-      return `${c.language}: ${c.expression.slice(0, 30)}`;
-    }
     case "webhook-action": {
       const c = node.config as WebhookActionConfig;
-      return c.url ? `${c.method} ${c.url.slice(0, 25)}...` : "No URL set";
+      return c.url ? `POST ${c.url.slice(0, 25)}...` : "No URL set";
     }
     default:
       return "";
@@ -55,10 +57,11 @@ function getConfigSummary(node: WorkflowNode): string {
 interface BaseNodeProps {
   node: WorkflowNode;
   isSelected: boolean;
+  executionState?: ExecutionState;
   onPortPointerDown?: (nodeId: string, portId: string, e: React.PointerEvent) => void;
 }
 
-export function BaseNode({ node, isSelected, onPortPointerDown }: BaseNodeProps) {
+export function BaseNode({ node, isSelected, executionState = "idle", onPortPointerDown }: BaseNodeProps) {
   const def = NODE_DEFINITIONS[node.type];
   const LucideIcon = icons[def.icon as keyof typeof icons];
   const inputPorts = def.ports.filter((p) => p.direction === "input");
@@ -67,6 +70,18 @@ export function BaseNode({ node, isSelected, onPortPointerDown }: BaseNodeProps)
 
   const totalHeight = Math.max(NODE_MIN_HEIGHT, 44 + 36);
 
+  const borderColor = executionState === "error"
+    ? "#ef4444"
+    : executionState === "active"
+      ? "#22c55e"
+      : isSelected ? "#7b61ff" : "#e5e7eb";
+
+  const glowShadow = executionState === "error"
+    ? "0 0 0 2px rgba(239,68,68,0.3)"
+    : executionState === "active"
+      ? "0 0 0 2px rgba(34,197,94,0.3)"
+      : isSelected ? "0 0 0 2px rgba(123,97,255,0.2)" : undefined;
+
   return (
     <g transform={`translate(${node.position.x},${node.position.y})`} data-node-id={node.id}>
       <foreignObject width={NODE_WIDTH} height={totalHeight} style={{ overflow: "visible" }}>
@@ -74,9 +89,9 @@ export function BaseNode({ node, isSelected, onPortPointerDown }: BaseNodeProps)
           className="flex flex-col rounded-xl border bg-white shadow-md"
           style={{
             width: NODE_WIDTH,
-            borderColor: isSelected ? "#7b61ff" : "#e5e7eb",
-            borderWidth: isSelected ? 2 : 1,
-            boxShadow: isSelected ? "0 0 0 2px rgba(123,97,255,0.2)" : undefined,
+            borderColor,
+            borderWidth: isSelected || executionState !== "idle" ? 2 : 1,
+            boxShadow: glowShadow,
           }}
           data-node-header="true"
         >
