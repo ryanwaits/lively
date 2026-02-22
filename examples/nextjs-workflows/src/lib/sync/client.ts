@@ -12,5 +12,15 @@ export function buildInitialStorage() {
     meta: new LiveObject({ name: "Untitled Workflow", status: "draft" }),
     nodes: new LiveMap<LiveObject>(),
     edges: new LiveMap<LiveObject>(),
+    stream: new LiveObject({
+      streamId: null,
+      status: "draft",
+      lastDeployedAt: null,
+      errorMessage: null,
+      totalDeliveries: 0,
+      failedDeliveries: 0,
+      lastTriggeredAt: null,
+      lastTriggeredBlock: null,
+    }),
   };
 }

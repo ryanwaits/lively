@@ -21,13 +21,15 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   restore: () => {
     try {
-      let userId = localStorage.getItem("wf-userId");
-      let displayName = localStorage.getItem("wf-displayName");
+      // Use sessionStorage so each tab gets a unique identity (enables
+      // testing multiplayer by opening multiple tabs in the same browser).
+      let userId = sessionStorage.getItem("wf-userId");
+      let displayName = sessionStorage.getItem("wf-displayName");
       if (!userId) {
         userId = crypto.randomUUID();
         displayName = generateName();
-        localStorage.setItem("wf-userId", userId);
-        localStorage.setItem("wf-displayName", displayName);
+        sessionStorage.setItem("wf-userId", userId);
+        sessionStorage.setItem("wf-displayName", displayName);
       }
       set({ userId, displayName: displayName || generateName() });
     } catch {

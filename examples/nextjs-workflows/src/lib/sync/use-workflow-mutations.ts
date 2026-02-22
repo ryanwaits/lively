@@ -93,6 +93,14 @@ export function useWorkflowMutations() {
     [],
   );
 
+  const updateStream = useMutation(
+    ({ storage }, updates: Record<string, unknown>) => {
+      const stream = storage.root.get("stream") as LiveObject;
+      stream.update(updates);
+    },
+    [],
+  );
+
   const updateCursor = useCallback(
     (x: number, y: number) => {
       const { pos, scale } = useViewportStore.getState();
@@ -101,5 +109,5 @@ export function useWorkflowMutations() {
     [updateCursorFn],
   );
 
-  return { addNode, updateNode, deleteNode, addEdge, deleteEdge, updateMeta, updateCursor };
+  return { addNode, updateNode, deleteNode, addEdge, deleteEdge, updateMeta, updateStream, updateCursor };
 }

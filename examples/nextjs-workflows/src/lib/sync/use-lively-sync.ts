@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import type { LiveObject, LiveMap } from "@waits/lively-client";
 import { useRoom, useStorageRoot } from "@waits/lively-react";
 import { useWorkflowStore } from "@/lib/store/workflow-store";
+import type { StreamState } from "@/lib/store/workflow-store";
 import type { WorkflowNode, WorkflowEdge } from "@/types/workflow";
 
 function liveObjectToNode(lo: LiveObject): WorkflowNode | null {
@@ -37,12 +38,16 @@ export function useLivelySync(): void {
 
   const syncNodes = useWorkflowStore((s) => s.syncNodes);
   const syncEdges = useWorkflowStore((s) => s.syncEdges);
+  const syncMeta = useWorkflowStore((s) => s.syncMeta);
+  const syncStream = useWorkflowStore((s) => s.syncStream);
 
   useEffect(() => {
     if (!root) return;
 
     const nodesMap = root.get("nodes") as LiveMap<LiveObject> | undefined;
     const edgesMap = root.get("edges") as LiveMap<LiveObject> | undefined;
+    const metaObj = root.get("meta") as LiveObject | undefined;
+    const streamObj = root.get("stream") as LiveObject | undefined;
 
     function doSyncNodes() {
       if (!nodesMap) return;
@@ -64,8 +69,31 @@ export function useLivelySync(): void {
       syncEdges(arr);
     }
 
+    function doSyncMeta() {
+      if (!metaObj) return;
+      const raw = metaObj.toObject();
+      syncMeta({ name: raw.name as string, status: raw.status as string });
+    }
+
+    function doSyncStream() {
+      if (!streamObj) return;
+      const raw = streamObj.toObject();
+      syncStream({
+        streamId: (raw.streamId as string) || null,
+        status: (raw.status as StreamState["status"]) || "draft",
+        lastDeployedAt: (raw.lastDeployedAt as string) || null,
+        errorMessage: (raw.errorMessage as string) || null,
+        totalDeliveries: (raw.totalDeliveries as number) || 0,
+        failedDeliveries: (raw.failedDeliveries as number) || 0,
+        lastTriggeredAt: (raw.lastTriggeredAt as string) || null,
+        lastTriggeredBlock: (raw.lastTriggeredBlock as number) || null,
+      });
+    }
+
     doSyncNodes();
     doSyncEdges();
+    doSyncMeta();
+    doSyncStream();
 
     const unsubNodes = nodesMap
       ? room.subscribe(nodesMap, doSyncNodes, { isDeep: true })
@@ -73,10 +101,18 @@ export function useLivelySync(): void {
     const unsubEdges = edgesMap
       ? room.subscribe(edgesMap, doSyncEdges, { isDeep: true })
       : undefined;
+    const unsubMeta = metaObj
+      ? room.subscribe(metaObj, doSyncMeta)
+      : undefined;
+    const unsubStream = streamObj
+      ? room.subscribe(streamObj, doSyncStream)
+      : undefined;
 
     return () => {
       unsubNodes?.();
       unsubEdges?.();
+      unsubMeta?.();
+      unsubStream?.();
     };
-  }, [root, room, syncNodes, syncEdges]);
+  }, [root, room, syncNodes, syncEdges, syncMeta, syncStream]);
 }
