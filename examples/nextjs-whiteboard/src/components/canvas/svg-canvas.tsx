@@ -27,6 +27,8 @@ interface SvgCanvasProps {
   onCanvasDoubleClick?: (canvasX: number, canvasY: number) => void;
   onSelectionRect?: (rect: { x: number; y: number; width: number; height: number } | null) => void;
   onSelectionComplete?: (rect: { x: number; y: number; width: number; height: number }) => void;
+  onCanvasPointerDown?: (x: number, y: number) => void;
+  onCanvasPointerUp?: (x: number, y: number) => void;
   mode?: "select" | "hand";
   isCreationMode?: boolean;
   children?: React.ReactNode;
@@ -55,7 +57,7 @@ function screenToCanvas(
 }
 
 export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function SvgCanvas(
-  { boardId, onStageMouseMove, onStageMouseLeave, onClickEmpty, onCanvasClick, onCanvasDoubleClick, onSelectionRect, onSelectionComplete, mode = "select", isCreationMode = false, children },
+  { boardId, onStageMouseMove, onStageMouseLeave, onClickEmpty, onCanvasClick, onCanvasDoubleClick, onSelectionRect, onSelectionComplete, onCanvasPointerDown, onCanvasPointerUp, mode = "select", isCreationMode = false, children },
   ref,
 ) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -461,6 +463,13 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
         return;
       }
 
+      // Canvas pointer down for drawing tools
+      if (isCreationMode && onCanvasPointerDown) {
+        const pos = getCanvasPos(e.clientX, e.clientY);
+        onCanvasPointerDown(pos.x, pos.y);
+        return;
+      }
+
       // Selection rect — only start when clicking on empty canvas (svg itself or the bg rect)
       if (mode === "select") {
         const target = e.target as SVGElement;
@@ -470,7 +479,7 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
         }
       }
     },
-    [mode, getCanvasPos],
+    [mode, getCanvasPos, isCreationMode, onCanvasPointerDown],
   );
 
   const handlePointerMove = useCallback(
@@ -516,6 +525,12 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
         return;
       }
 
+      // Canvas pointer up for drawing tools
+      if (isCreationMode && onCanvasPointerUp) {
+        const pos = getCanvasPos(e.clientX, e.clientY);
+        onCanvasPointerUp(pos.x, pos.y);
+      }
+
       // End selection rect
       if (dragSelectRef.current) {
         const pos = getCanvasPos(e.clientX, e.clientY);
@@ -532,7 +547,7 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
         onSelectionRect?.(null);
       }
     },
-    [getCanvasPos, debouncedSave, onSelectionRect, onSelectionComplete],
+    [getCanvasPos, debouncedSave, onSelectionRect, onSelectionComplete, isCreationMode, onCanvasPointerUp],
   );
 
   const handleClick = useCallback(
