@@ -13,7 +13,7 @@ import {
   RectangleHorizontal,
   Minus,
   Pencil,
-  Stamp,
+  SmilePlus,
   Trash2,
   Menu,
   Home,
@@ -112,7 +112,7 @@ const creationTools: { mode: ToolMode; icon: typeof StickyNote | null; label: st
   { mode: "pill", icon: RectangleHorizontal, label: "Pill", shortcut: "P" },
   // --- separator rendered between index 6 and 7 ---
   { mode: "text", icon: Type, label: "Text", shortcut: "T" },
-  { mode: "stamp", icon: Stamp, label: "Stamp", shortcut: "E" },
+  { mode: "stamp", icon: SmilePlus, label: "Emoji", shortcut: "E" },
 ];
 
 const CREATION_SEPARATOR_INDEX = 7;
