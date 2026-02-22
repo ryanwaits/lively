@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@theme {
+  /* Pulled from examples/:root oklch tokens */
+  --color-body: #FFFFFF;
+  --color-panel: #F8F8F8;
+  --color-surface: #F3F3F3;
+  --color-border: #E5E5E5;
+  --color-border-hover: #D4D4D4;
+  --color-text: #1C1C1C;
+  --color-muted: #737373;
+  --color-accent: #1C1C1C;
+  --color-accent-fg: #FFFFFF;
+  --color-primary: #3b82f6;
+  --color-primary-fg: #FFFFFF;
+
+  /* Code syntax — Zed light theme inspired */
+  --color-code-keyword: #C4621A;
+  --color-code-string: #2E7D32;
+  --color-code-func: #1E3A8A;
+  --color-code-comment: #A3A3A3;
+  --color-code-bg: #FAFAFA;
+  --color-code-border: #EBEBEB;
+
+  /* Cursor demo — from server COLORS palette */
+  --color-cursor-1: #3b82f6;
+  --color-cursor-2: #ec4899;
+
+  --font-sans: "Space Grotesk", sans-serif;
+  --font-body: "Manrope", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-body);
+  color: var(--color-text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+}
+
+/* Grid bg */
+.bg-grid {
+  background-size: 60px 60px;
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+}
+
+/* Separator */
+.di-separator::before {
+  content: "//";
+  color: var(--color-primary);
+  margin-right: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  letter-spacing: -2px;
+}
+
+/* Animations */
+@keyframes cursorMove {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(100px, 50px); }
+  50% { transform: translate(20px, 150px); }
+  75% { transform: translate(-50px, 80px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Responsive hero */
+@media (max-width: 768px) {
+  .hero-headline {
+    font-size: 48px !important;
+  }
+}
