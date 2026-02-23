@@ -1,3 +1,5 @@
+const EMPTY_ARRAY: never[] = [];
+
 import {
   useCallback,
   useEffect,
@@ -79,7 +81,7 @@ export function useFollowUser(
       followersCache.current = next;
       return next;
     }, [room]),
-    () => [] as string[]
+    () => EMPTY_ARRAY as string[]
   );
 
   // 60fps lerp loop — interpolates toward target and calls onViewportChange

@@ -3,6 +3,8 @@ import type { PresenceUser } from "@waits/lively-types";
 import { useRoom } from "./room-context.js";
 import { shallowEqual } from "./shallow-equal.js";
 
+const EMPTY_ARRAY: never[] = [];
+
 function shallowEqualArray(a: PresenceUser[], b: PresenceUser[]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
@@ -31,7 +33,7 @@ export function useOthers(): PresenceUser[] {
       cache.current = next;
       return next;
     }, [room]),
-    () => [] as PresenceUser[]
+    () => EMPTY_ARRAY as PresenceUser[]
   );
 }
 
@@ -110,7 +112,7 @@ export function useOthersUserIds(): string[] {
       cache.current = next;
       return next;
     }, [room]),
-    () => [] as string[]
+    () => EMPTY_ARRAY as string[]
   );
 }
 
@@ -143,6 +145,6 @@ export function useOthersMapped<T>(
       cache.current = { users: others, mapped };
       return mapped;
     }, [room]),
-    () => [] as T[]
+    () => EMPTY_ARRAY as T[]
   );
 }

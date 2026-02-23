@@ -2,6 +2,8 @@ import { useSyncExternalStore, useCallback, useRef } from "react";
 import type { CursorData } from "@waits/lively-types";
 import { useRoom } from "./room-context.js";
 
+const EMPTY_CURSORS: Map<string, CursorData> = new Map();
+
 /**
  * Returns a Map of all cursor positions in the room, keyed by userId.
  * Includes the current user's own cursor. Re-renders only when cursor
@@ -30,7 +32,8 @@ export function useCursors(): Map<string, CursorData> {
             prev.y !== v.y ||
             prev.viewportScale !== v.viewportScale ||
             prev.viewportPos?.x !== v.viewportPos?.x ||
-            prev.viewportPos?.y !== v.viewportPos?.y
+            prev.viewportPos?.y !== v.viewportPos?.y ||
+            prev.cursorType !== v.cursorType
           ) {
             same = false;
             break;
@@ -41,7 +44,7 @@ export function useCursors(): Map<string, CursorData> {
       cache.current = next;
       return next;
     }, [room]),
-    () => new Map<string, CursorData>()
+    () => EMPTY_CURSORS
   );
 }
 
@@ -53,11 +56,11 @@ export function useCursors(): Map<string, CursorData> {
  * const updateCursor = useUpdateCursor();
  * <div onMouseMove={e => updateCursor(e.clientX, e.clientY)} />
  */
-export function useUpdateCursor(): (x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number) => void {
+export function useUpdateCursor(): (x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer") => void {
   const room = useRoom();
   return useCallback(
-    (x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number) =>
-      room.updateCursor(x, y, viewportPos, viewportScale),
+    (x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer") =>
+      room.updateCursor(x, y, viewportPos, viewportScale, cursorType),
     [room]
   );
 }

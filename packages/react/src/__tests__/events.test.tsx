@@ -80,7 +80,7 @@ describe("useUpdateCursor", () => {
     setup();
     const { result } = renderHook(() => useUpdateCursor(), { wrapper });
     result.current(50, 75);
-    expect(mockRoom.updateCursor).toHaveBeenCalledWith(50, 75, undefined, undefined);
+    expect(mockRoom.updateCursor).toHaveBeenCalledWith(50, 75, undefined, undefined, undefined);
   });
 
   it("returns stable function reference", () => {
