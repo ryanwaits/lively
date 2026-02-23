@@ -1,6 +1,9 @@
 // Hook
 export { useCursorTracking } from "./use-cursor-tracking.js";
 
+// Utilities
+export { generateFunName } from "./generate-name.js";
+
 // Components
 export { Cursor } from "./cursor.js";
 export type { CursorProps } from "./cursor.js";
