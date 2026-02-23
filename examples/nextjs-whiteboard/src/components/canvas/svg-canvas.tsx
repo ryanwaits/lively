@@ -16,6 +16,7 @@ export interface BoardCanvasHandle {
   panToObjects: (bounds: { x: number; y: number; width: number; height: number }[]) => void;
   getSvgElement: () => SVGSVGElement | null;
   setViewport: (pos: { x: number; y: number }, scale: number) => void;
+  getScreenDimensions: () => { width: number; height: number };
 }
 
 interface SvgCanvasProps {
@@ -333,6 +334,7 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
     panToObjects,
     getSvgElement: () => svgRef.current,
     setViewport: (pos, scale) => applyTransform(pos, scale),
+    getScreenDimensions: () => dimensions,
   }), [dimensions, zoomBy, debouncedSave, navigateToFrame, zoomToFitAll, panToObjects]);
 
   // Measure container on mount

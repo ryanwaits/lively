@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { SvgStickyNote } from "./svg-sticky-note";
 import { SvgRectangleShape } from "./svg-rectangle-shape";
 import { SvgTextShape } from "./svg-text-shape";
@@ -11,6 +11,7 @@ import { SvgLineShape } from "./svg-line-shape";
 import { SvgDrawingShape } from "./svg-drawing-shape";
 import { SvgEmojiShape } from "./svg-emoji-shape";
 import { useViewportStore } from "@/lib/store/viewport-store";
+import { getVisibleBounds, isObjectVisible } from "@/lib/geometry/viewport-culling";
 import type { BoardObject } from "@/types/board";
 
 import { RENDER_TIER } from "@/lib/geometry/render-tiers";
@@ -30,6 +31,8 @@ interface CanvasObjectsProps {
   onLineUpdateEnd?: (id: string, updates: Partial<BoardObject>) => void;
   interactive?: boolean;
   editingId?: string | null;
+  screenWidth?: number;
+  screenHeight?: number;
 }
 
 export const CanvasObjects = memo(function CanvasObjects({
@@ -37,18 +40,29 @@ export const CanvasObjects = memo(function CanvasObjects({
   onResize, onResizeEnd, onRotate, onRotateEnd,
   onLineUpdate, onLineUpdateEnd,
   interactive = true, editingId,
+  screenWidth = 0, screenHeight = 0,
 }: CanvasObjectsProps) {
   const scale = useViewportStore((s) => s.scale);
-  const sorted = Array.from(objects.values()).sort((a, b) => {
+  const pos = useViewportStore((s) => s.pos);
+
+  const sorted = useMemo(() => Array.from(objects.values()).sort((a, b) => {
     const tierA = RENDER_TIER[a.type] ?? 1;
     const tierB = RENDER_TIER[b.type] ?? 1;
     if (tierA !== tierB) return tierA - tierB;
     return a.z_index - b.z_index;
-  });
+  }), [objects]);
+
+  const visible = useMemo(() => {
+    if (screenWidth === 0 || screenHeight === 0) return sorted;
+    const bounds = getVisibleBounds(pos, scale, screenWidth, screenHeight);
+    return sorted.filter(
+      (obj) => selectedIds.has(obj.id) || isObjectVisible(obj, bounds),
+    );
+  }, [sorted, pos, scale, screenWidth, screenHeight, selectedIds]);
 
   return (
     <g>
-      {sorted.map((obj) => {
+      {visible.map((obj) => {
         const shared = {
           id: obj.id,
           object: obj,

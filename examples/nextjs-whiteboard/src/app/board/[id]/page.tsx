@@ -166,6 +166,15 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
   });
   const canvasRef = useRef<BoardCanvasHandle>(null);
   const lastCursorPosRef = useRef<{ x: number; y: number } | null>(null);
+  const lastSentCursorRef = useRef<{ x: number; y: number; vpX: number; vpY: number; scale: number } | null>(null);
+  const [screenDims, setScreenDims] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const update = () => setScreenDims({ width: window.innerWidth, height: window.innerHeight });
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
   const resizeOriginRef = useRef<{ x: number; y: number } | null>(null);
   const multiDragStartRef = useRef<Map<string, BoardObject> | null>(null);
   const clipboardRef = useRef<BoardObject[]>([]);
@@ -214,37 +223,46 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         freehandDrawing.addPoint(relativePointerPos);
       }
       lastCursorPosRef.current = relativePointerPos;
-      mutations.updateCursor(relativePointerPos.x, relativePointerPos.y);
     },
-    [mutations, lineDrawing.setCursorPos, activeTool, freehandDrawing],
+    [lineDrawing.setCursorPos, activeTool, freehandDrawing],
   );
 
   const handleStageMouseLeave = useCallback(() => {
     setStageMousePos(null);
   }, []);
 
-  // Broadcast viewport on pan/zoom — skip when driven by follow mode to avoid feedback loop
+  // rAF loop: send cursor position decoupled from React render cycle
   useEffect(() => {
-    return useViewportStore.subscribe(() => {
-      if (isFollowingRef.current) return;
-      const { pos: vpPos, scale } = useViewportStore.getState();
-      const cursorPos = lastCursorPosRef.current ?? {
-        x: (window.innerWidth / 2 - vpPos.x) / scale,
-        y: (window.innerHeight / 2 - vpPos.y) / scale,
-      };
-      mutations.updateCursor(cursorPos.x, cursorPos.y);
-    });
+    let rafId: number;
+    const tick = () => {
+      if (!isFollowingRef.current) {
+        const { pos: vpPos, scale } = useViewportStore.getState();
+        const cursorPos = lastCursorPosRef.current;
+        const last = lastSentCursorRef.current;
+        if (cursorPos) {
+          const changed =
+            !last ||
+            last.x !== cursorPos.x ||
+            last.y !== cursorPos.y ||
+            last.vpX !== vpPos.x ||
+            last.vpY !== vpPos.y ||
+            last.scale !== scale;
+          if (changed) {
+            mutations.updateCursor(cursorPos.x, cursorPos.y);
+            lastSentCursorRef.current = { x: cursorPos.x, y: cursorPos.y, vpX: vpPos.x, vpY: vpPos.y, scale };
+          }
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, [mutations]);
 
-  // Re-broadcast cursor+viewport when a new user joins so they get our current state immediately
+  // Re-broadcast cursor when a new user joins — reset sent ref to force rAF to re-send
   useOthersListener((event) => {
     if (event.type === "enter") {
-      const { pos: vpPos, scale } = useViewportStore.getState();
-      const cursorPos = lastCursorPosRef.current ?? {
-        x: (window.innerWidth / 2 - vpPos.x) / scale,
-        y: (window.innerHeight / 2 - vpPos.y) / scale,
-      };
-      mutations.updateCursor(cursorPos.x, cursorPos.y);
+      lastSentCursorRef.current = null;
     }
   });
 
@@ -829,6 +847,8 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         <CanvasObjects
           objects={filteredObjects}
           selectedIds={selectedIds}
+          screenWidth={screenDims.width}
+          screenHeight={screenDims.height}
           onSelect={(id, shiftKey) => {
             if (!id) { setSelected(null); return; }
             if (shiftKey) {
