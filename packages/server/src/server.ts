@@ -601,6 +601,8 @@ export class LivelyServer {
       const vs = parsed.viewportScale as number | undefined;
       const isValidVp = vp && typeof vp.x === "number" && isFinite(vp.x) && typeof vp.y === "number" && isFinite(vp.y);
       const isValidVs = typeof vs === "number" && isFinite(vs);
+      const ct = parsed.cursorType as string | undefined;
+      const isValidCt = ct === "default" || ct === "text" || ct === "pointer";
       const cursor: CursorData = {
         userId: conn.user.userId,
         displayName: conn.user.displayName,
@@ -610,6 +612,7 @@ export class LivelyServer {
         lastUpdate: Date.now(),
         ...(isValidVp && { viewportPos: vp }),
         ...(isValidVs && { viewportScale: vs }),
+        ...(isValidCt && { cursorType: ct }),
       };
       room.broadcast(
         JSON.stringify({ type: "cursor:update", cursor }),

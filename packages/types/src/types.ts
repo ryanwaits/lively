@@ -24,6 +24,7 @@ export interface CursorData {
   lastUpdate: number;
   viewportPos?: { x: number; y: number };
   viewportScale?: number;
+  cursorType?: "default" | "text" | "pointer";
 }
 
 export type ConnectionStatus =
@@ -50,6 +51,7 @@ export interface ClientCursorMessage {
   y: number;
   viewportPos?: { x: number; y: number };
   viewportScale?: number;
+  cursorType?: "default" | "text" | "pointer";
 }
 
 export interface PresenceUpdateMessage {

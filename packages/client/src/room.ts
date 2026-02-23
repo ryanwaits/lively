@@ -56,7 +56,7 @@ export class Room {
   // Throttle state for updateCursor
   private cursorThrottleMs: number;
   private cursorTimer: ReturnType<typeof setTimeout> | null = null;
-  private pendingCursor: { x: number; y: number; viewportPos?: { x: number; y: number }; viewportScale?: number } | null = null;
+  private pendingCursor: { x: number; y: number; viewportPos?: { x: number; y: number }; viewportScale?: number; cursorType?: "default" | "text" | "pointer" } | null = null;
   private lastCursorSend = 0;
 
   // Storage state
@@ -294,20 +294,20 @@ export class Room {
     }
   }
 
-  updateCursor(x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number): void {
+  updateCursor(x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer"): void {
     const now = Date.now();
     const elapsed = now - this.lastCursorSend;
 
     if (elapsed >= this.cursorThrottleMs) {
-      this.sendCursor(x, y, viewportPos, viewportScale);
+      this.sendCursor(x, y, viewportPos, viewportScale, cursorType);
     } else {
-      this.pendingCursor = { x, y, viewportPos, viewportScale };
+      this.pendingCursor = { x, y, viewportPos, viewportScale, cursorType };
       if (!this.cursorTimer) {
         this.cursorTimer = setTimeout(() => {
           this.cursorTimer = null;
           if (this.pendingCursor) {
-            const { x: px, y: py, viewportPos: pvp, viewportScale: pvs } = this.pendingCursor;
-            this.sendCursor(px, py, pvp, pvs);
+            const { x: px, y: py, viewportPos: pvp, viewportScale: pvs, cursorType: pct } = this.pendingCursor;
+            this.sendCursor(px, py, pvp, pvs, pct);
             this.pendingCursor = null;
           }
         }, this.cursorThrottleMs - elapsed);
@@ -394,11 +394,12 @@ export class Room {
 
   // --- Internal ---
 
-  private sendCursor(x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number): void {
+  private sendCursor(x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer"): void {
     this.lastCursorSend = Date.now();
     const msg: Record<string, unknown> = { type: "cursor:update", x, y };
     if (viewportPos) msg.viewportPos = viewportPos;
     if (viewportScale !== undefined) msg.viewportScale = viewportScale;
+    if (cursorType) msg.cursorType = cursorType;
     this.send(msg as { type: string; [key: string]: unknown });
   }
 
