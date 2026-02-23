@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const COMMAND = "npm install @waits/lively-react";
+const COMMAND = "bun add @waits/lively-react";
 
 export function CopyInstall() {
   const [copied, setCopied] = useState(false);

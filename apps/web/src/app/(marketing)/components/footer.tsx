@@ -35,7 +35,7 @@ export function Footer() {
           </div>
 
           <div className="flex gap-8 text-sm text-muted">
-            <a href="#" className="hover:text-text transition-colors no-underline">
+            <a href="https://github.com/ryanwaits/lively" className="hover:text-text transition-colors no-underline">
               GitHub
             </a>
           </div>
