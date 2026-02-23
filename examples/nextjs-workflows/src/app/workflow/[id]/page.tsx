@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useRef, useCallback, useEffect, useState } from "react";
 import {
   LivelyProvider, RoomProvider,
@@ -33,26 +32,24 @@ import { NODE_DEFINITIONS } from "@/lib/workflow/node-definitions";
 import { client, buildInitialStorage } from "@/lib/sync/client";
 import { useLivelySync } from "@/lib/sync/use-lively-sync";
 import { useWorkflowMutations } from "@/lib/sync/use-workflow-mutations";
-import { TEMPLATE_MAP } from "@/lib/workflow/templates";
+import { DEFAULT_WORKFLOW } from "@/lib/workflow/templates";
 import type { WorkflowNode, WorkflowNodeType } from "@/types/workflow";
 
 export default function WorkflowPage() {
-  return (
-    <Suspense fallback={<div className="flex h-screen w-screen items-center justify-center"><div className="text-gray-400">Loading...</div></div>}>
-      <WorkflowPageWithParams />
-    </Suspense>
-  );
-}
-
-function WorkflowPageWithParams() {
   const params = useParams();
-  const searchParams = useSearchParams();
+  const router = useRouter();
   const workflowId = params.id as string;
-  const templateId = searchParams.get("template");
-  const template = templateId ? TEMPLATE_MAP.get(templateId) : undefined;
   const { userId, displayName, restore } = useAuthStore();
 
   useEffect(() => { restore(); }, [restore]);
+
+  // Redirect to dashboard if no identity (user hasn't joined yet)
+  useEffect(() => {
+    if (!userId) {
+      const stored = sessionStorage.getItem("wf-userId");
+      if (!stored) router.replace("/");
+    }
+  }, [userId, router]);
 
   if (!userId) {
     return (
@@ -68,7 +65,7 @@ function WorkflowPageWithParams() {
         roomId={workflowId}
         userId={userId}
         displayName={displayName}
-        initialStorage={buildInitialStorage(template)}
+        initialStorage={buildInitialStorage(DEFAULT_WORKFLOW, workflowId)}
       >
         <WorkflowPageInner workflowId={workflowId} />
       </RoomProvider>
@@ -90,6 +87,20 @@ function WorkflowPageInner({ workflowId }: { workflowId: string }) {
   // --- Lively sync ---
   useLivelySync();
   const mutations = useWorkflowMutations();
+
+  // Auto-populate webhook URL on action nodes that don't have one
+  const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/${workflowId}`;
+  useEffect(() => {
+    const { nodes } = useWorkflowStore.getState();
+    for (const node of nodes.values()) {
+      if (node.type === "webhook-action") {
+        const config = node.config as import("@/types/node-configs").WebhookActionConfig;
+        if (!config.url || config.url !== webhookUrl) {
+          mutations.updateNode({ ...node, config: { ...config, url: webhookUrl } });
+        }
+      }
+    }
+  }, [mutations, webhookUrl]);
   const syncStatus = useSyncStatus();
   const { undo, redo } = useHistory();
   useErrorListener((err) => console.error("[Lively]", err.message));

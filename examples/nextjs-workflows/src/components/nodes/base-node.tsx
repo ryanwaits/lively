@@ -47,7 +47,15 @@ function getConfigSummary(node: WorkflowNode): string {
     }
     case "webhook-action": {
       const c = node.config as WebhookActionConfig;
-      return c.url ? `POST ${c.url.slice(0, 25)}...` : "No URL set";
+      if (c.url) {
+        try {
+          const host = new URL(c.url).host;
+          return `POST ${host}`;
+        } catch {
+          return `POST ${c.url.slice(0, 25)}...`;
+        }
+      }
+      return "No URL set";
     }
     default:
       return "";

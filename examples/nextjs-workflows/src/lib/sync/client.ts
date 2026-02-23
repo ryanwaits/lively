@@ -8,13 +8,22 @@ const serverUrl =
 
 export const client = new LivelyClient({ serverUrl, reconnect: true });
 
-export function buildInitialStorage(template?: WorkflowTemplate) {
+export function buildInitialStorage(template?: WorkflowTemplate, workflowId?: string) {
   const nodes = new LiveMap<LiveObject>();
   const edges = new LiveMap<LiveObject>();
 
+  const webhookUrl = workflowId
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/${workflowId}`
+    : "";
+
   if (template) {
     for (const node of template.nodes) {
-      nodes.set(node.id, new LiveObject({ ...node }));
+      const data = { ...node };
+      // Auto-populate webhook URL on action nodes
+      if (data.type === "webhook-action" && webhookUrl) {
+        data.config = { ...data.config, url: webhookUrl };
+      }
+      nodes.set(data.id, new LiveObject(data));
     }
     for (const edge of template.edges) {
       edges.set(edge.id, new LiveObject({ ...edge }));
