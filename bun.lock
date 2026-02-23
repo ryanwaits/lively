@@ -13,6 +13,9 @@
       "name": "@apps/web",
       "version": "0.1.0",
       "dependencies": {
+        "@waits/lively-client": "workspace:*",
+        "@waits/lively-react": "workspace:*",
+        "@waits/lively-ui": "workspace:*",
         "next": "16.1.6",
         "react": "19.2.3",
         "react-dom": "19.2.3",
