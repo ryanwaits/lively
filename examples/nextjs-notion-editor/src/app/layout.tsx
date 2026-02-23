@@ -4,6 +4,18 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Notion-style Editor — Lively Example",
+  description: "Block-based editor with drag-and-drop collaboration.",
+  openGraph: {
+    title: "Notion Editor — Lively",
+    description: "Block-based editor with drag-and-drop collaboration.",
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Notion Editor — Lively",
+    description: "Block-based editor with drag-and-drop collaboration.",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({

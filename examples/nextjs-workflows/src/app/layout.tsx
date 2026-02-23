@@ -14,7 +14,18 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Workflow Canvas",
-  description: "Collaborative workflow canvas for building SecondLayer Streams",
+  description: "Connected node graphs with real-time state flow.",
+  openGraph: {
+    title: "Workflows — Lively",
+    description: "Connected node graphs with real-time state flow.",
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Workflows — Lively",
+    description: "Connected node graphs with real-time state flow.",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({
