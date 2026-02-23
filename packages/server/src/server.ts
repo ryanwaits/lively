@@ -603,6 +603,12 @@ export class LivelyServer {
       const isValidVs = typeof vs === "number" && isFinite(vs);
       const ct = parsed.cursorType as string | undefined;
       const isValidCt = ct === "default" || ct === "text" || ct === "pointer";
+      const hr = parsed.highlightRect as { left: number; top: number; width: number; height: number } | undefined;
+      const isValidHr = hr != null &&
+        typeof hr.left === "number" && isFinite(hr.left) &&
+        typeof hr.top === "number" && isFinite(hr.top) &&
+        typeof hr.width === "number" && isFinite(hr.width) && hr.width >= 0 &&
+        typeof hr.height === "number" && isFinite(hr.height) && hr.height >= 0;
       const cursor: CursorData = {
         userId: conn.user.userId,
         displayName: conn.user.displayName,
@@ -613,6 +619,7 @@ export class LivelyServer {
         ...(isValidVp && { viewportPos: vp }),
         ...(isValidVs && { viewportScale: vs }),
         ...(isValidCt && { cursorType: ct }),
+        ...(isValidHr && { highlightRect: hr }),
       };
       room.broadcast(
         JSON.stringify({ type: "cursor:update", cursor }),
