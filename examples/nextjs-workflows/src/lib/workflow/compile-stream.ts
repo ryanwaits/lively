@@ -49,6 +49,7 @@ export function compileStream(
   name: string,
   nodes: Map<string, WorkflowNode>,
   edges: Map<string, WorkflowEdge>,
+  webhookUrl?: string,
 ): CompileResult {
   const errors: string[] = [];
 
@@ -67,7 +68,8 @@ export function compileStream(
   const triggerConfig = trigger.config as EventTriggerConfig;
   const actionConfig = action.config as WebhookActionConfig;
 
-  if (!actionConfig.url) {
+  const resolvedUrl = webhookUrl ?? actionConfig.url;
+  if (!resolvedUrl) {
     errors.push("Webhook URL is required");
     return { ok: false, errors };
   }
@@ -126,7 +128,7 @@ export function compileStream(
     ok: true,
     stream: {
       name,
-      webhookUrl: actionConfig.url,
+      webhookUrl: resolvedUrl,
       filters,
       options: {
         decodeClarityValues: actionConfig.decodeClarityValues ?? true,

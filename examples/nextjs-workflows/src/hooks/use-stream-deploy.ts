@@ -6,13 +6,15 @@ import { compileStream } from "@/lib/workflow/compile-stream";
 import { streamsApi } from "@/lib/api/streams-client";
 import type { WorkflowMutationsApi } from "@/lib/sync/mutations-context";
 
-export function useStreamDeploy(mutations: WorkflowMutationsApi) {
+export function useStreamDeploy(mutations: WorkflowMutationsApi, workflowId: string) {
   const [deploying, setDeploying] = useState(false);
+
+  const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/${workflowId}`;
 
   const deploy = useCallback(async () => {
     const { nodes, edges, meta, stream } = useWorkflowStore.getState();
 
-    const result = compileStream(meta.name, nodes, edges);
+    const result = compileStream(meta.name, nodes, edges, webhookUrl);
     if (!result.ok) {
       mutations.updateStream({ errorMessage: result.errors.join("; ") });
       return { ok: false as const, errors: result.errors };
@@ -50,7 +52,7 @@ export function useStreamDeploy(mutations: WorkflowMutationsApi) {
     } finally {
       setDeploying(false);
     }
-  }, [mutations]);
+  }, [mutations, webhookUrl]);
 
   const enable = useCallback(async () => {
     const { stream } = useWorkflowStore.getState();

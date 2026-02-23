@@ -1,23 +1,25 @@
 "use client";
 
 import type { WebhookActionConfig } from "@/types/node-configs";
-import { FormField, TextInput, NumberInput, CheckboxInput } from "./form-field";
+import { FormField, NumberInput, CheckboxInput } from "./form-field";
 
 export function WebhookActionForm({
   config,
   onChange,
+  workflowId,
 }: {
   config: WebhookActionConfig;
   onChange: (c: Partial<WebhookActionConfig>) => void;
+  workflowId: string;
 }) {
+  const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/${workflowId}`;
+
   return (
     <>
-      <FormField label="URL">
-        <TextInput
-          value={config.url}
-          onChange={(v) => onChange({ url: v })}
-          placeholder="https://example.com/webhook"
-        />
+      <FormField label="Webhook URL">
+        <div className="rounded-md border bg-gray-50 px-2.5 py-1.5 text-xs text-gray-500 select-all break-all" style={{ borderColor: "#e5e7eb" }}>
+          {webhookUrl}
+        </div>
       </FormField>
       <FormField label="Retry Count">
         <NumberInput

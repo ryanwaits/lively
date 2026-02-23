@@ -17,7 +17,7 @@ import { PrintEventFilterForm } from "./config-forms/print-event-filter-form";
 import { WebhookActionForm } from "./config-forms/webhook-action-form";
 import { Trash2 } from "lucide-react";
 
-export function NodeConfigPanel({ mutations }: { mutations: WorkflowMutationsApi }) {
+export function NodeConfigPanel({ mutations, workflowId }: { mutations: WorkflowMutationsApi; workflowId: string }) {
   const configNodeId = useWorkflowStore((s) => s.configNodeId);
   const nodes = useWorkflowStore((s) => s.nodes);
 
@@ -52,7 +52,7 @@ export function NodeConfigPanel({ mutations }: { mutations: WorkflowMutationsApi
 
       {/* Config form */}
       <div className="flex-1 overflow-y-auto p-4">
-        <ConfigForm node={node} onChange={handleConfigChange} />
+        <ConfigForm node={node} onChange={handleConfigChange} workflowId={workflowId} />
       </div>
 
       {/* Footer */}
@@ -73,7 +73,7 @@ export function NodeConfigPanel({ mutations }: { mutations: WorkflowMutationsApi
   );
 }
 
-function ConfigForm({ node, onChange }: { node: WorkflowNode; onChange: (config: Record<string, unknown>) => void }) {
+function ConfigForm({ node, onChange, workflowId }: { node: WorkflowNode; onChange: (config: Record<string, unknown>) => void; workflowId: string }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const config = node.config as any;
   switch (node.type) {
@@ -92,7 +92,7 @@ function ConfigForm({ node, onChange }: { node: WorkflowNode; onChange: (config:
     case "print-event-filter":
       return <PrintEventFilterForm config={config} onChange={onChange} />;
     case "webhook-action":
-      return <WebhookActionForm config={config} onChange={onChange} />;
+      return <WebhookActionForm config={config} onChange={onChange} workflowId={workflowId} />;
     default:
       return <p className="text-xs text-gray-400">No configuration available</p>;
   }
