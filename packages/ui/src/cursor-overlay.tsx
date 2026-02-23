@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useCursors, useOthers, useSelf } from "@waits/lively-react";
 import { Cursor } from "./cursor.js";
 
@@ -66,18 +66,37 @@ export function CursorOverlay({
           Date.now() - cursor.lastUpdate > inactivityTimeout;
 
         return (
-          <Cursor
-            key={userId}
-            x={cursor.x}
-            y={cursor.y}
-            color={cursor.color}
-            displayName={cursor.displayName}
-            className={className}
-            mode={mode}
-            avatarUrl={avatarMap.get(userId)}
-            cursorType={cursor.cursorType}
-            style={isInactive ? { opacity: 0 } : undefined}
-          />
+          <Fragment key={userId}>
+            {cursor.highlightRect && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  transform: `translate(${cursor.highlightRect.left}px, ${cursor.highlightRect.top}px)`,
+                  width: cursor.highlightRect.width,
+                  height: cursor.highlightRect.height,
+                  backgroundColor: cursor.color,
+                  opacity: isInactive ? 0 : 0.12,
+                  transition: "opacity 300ms",
+                  borderRadius: 4,
+                  pointerEvents: "none",
+                  zIndex: 9998,
+                }}
+              />
+            )}
+            <Cursor
+              x={cursor.x}
+              y={cursor.y}
+              color={cursor.color}
+              displayName={cursor.displayName}
+              className={className}
+              mode={mode}
+              avatarUrl={avatarMap.get(userId)}
+              cursorType={cursor.cursorType}
+              style={isInactive ? { opacity: 0 } : undefined}
+            />
+          </Fragment>
         );
       })}
     </>
