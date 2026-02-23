@@ -1,5 +1,6 @@
 export type {
   OnlineStatus,
+  HighlightRect,
   PresenceUser,
   CursorData,
   ConnectionStatus,

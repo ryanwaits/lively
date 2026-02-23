@@ -2,6 +2,8 @@
 
 export type OnlineStatus = "online" | "away" | "offline";
 
+export type HighlightRect = { left: number; top: number; width: number; height: number };
+
 export interface PresenceUser {
   userId: string;
   displayName: string;
@@ -25,6 +27,7 @@ export interface CursorData {
   viewportPos?: { x: number; y: number };
   viewportScale?: number;
   cursorType?: "default" | "text" | "pointer";
+  highlightRect?: HighlightRect;
 }
 
 export type ConnectionStatus =
@@ -52,6 +55,7 @@ export interface ClientCursorMessage {
   viewportPos?: { x: number; y: number };
   viewportScale?: number;
   cursorType?: "default" | "text" | "pointer";
+  highlightRect?: HighlightRect;
 }
 
 export interface PresenceUpdateMessage {
