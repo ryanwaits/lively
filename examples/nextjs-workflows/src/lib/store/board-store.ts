@@ -25,6 +25,7 @@ interface BoardState {
   nodes: Map<string, WorkflowNode>;
   edges: Map<string, WorkflowEdge>;
   selectedWorkflowId: string | null;
+  selectedWorkflowIds: Set<string>;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   selectedNodeIds: Set<string>;
@@ -39,9 +40,10 @@ interface BoardState {
   // Selection — local UI state only
   selectNode: (id: string | null) => void;
   selectEdge: (id: string | null) => void;
-  selectWorkflow: (id: string | null) => void;
+  selectWorkflow: (id: string | null, opts?: { shift?: boolean }) => void;
   openConfig: (id: string | null) => void;
   toggleNodeSelection: (id: string) => void;
+  toggleWorkflowSelection: (id: string) => void;
   setSelectedNodeIds: (ids: Set<string>) => void;
   clearSelection: () => void;
 
@@ -57,6 +59,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   nodes: new Map(),
   edges: new Map(),
   selectedWorkflowId: null,
+  selectedWorkflowIds: new Set(),
   selectedNodeId: null,
   selectedEdgeId: null,
   selectedNodeIds: new Set(),
@@ -88,16 +91,38 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       const node = state.nodes.get(id);
       if (node) {
         const wfId = node.workflowId === UNASSIGNED_WORKFLOW_ID ? null : node.workflowId;
-        set({ selectedNodeId: id, selectedEdgeId: null, selectedNodeIds: new Set(), selectedWorkflowId: wfId });
+        set({
+          selectedNodeId: id,
+          selectedEdgeId: null,
+          selectedNodeIds: new Set(),
+          selectedWorkflowId: wfId,
+          selectedWorkflowIds: wfId ? new Set([wfId]) : new Set(),
+        });
         return;
       }
     }
-    set({ selectedNodeId: id, selectedEdgeId: null, selectedNodeIds: new Set() });
+    set({ selectedNodeId: id, selectedEdgeId: null, selectedNodeIds: new Set(), selectedWorkflowIds: new Set() });
   },
 
   selectEdge: (id) => set({ selectedEdgeId: id, selectedNodeId: null }),
 
-  selectWorkflow: (id) => set({ selectedWorkflowId: id }),
+  selectWorkflow: (id, opts) => {
+    if (!id) {
+      set({ selectedWorkflowId: null, selectedWorkflowIds: new Set() });
+      return;
+    }
+    if (opts?.shift) {
+      const next = new Set(get().selectedWorkflowIds);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      set({ selectedWorkflowId: id, selectedWorkflowIds: next });
+    } else {
+      set({ selectedWorkflowId: id, selectedWorkflowIds: new Set([id]) });
+    }
+  },
 
   toggleNodeSelection: (id) => {
     const state = get();
@@ -110,9 +135,19 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     set({ selectedNodeIds: next });
   },
 
+  toggleWorkflowSelection: (id) => {
+    const next = new Set(get().selectedWorkflowIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    set({ selectedWorkflowIds: next, selectedWorkflowId: id });
+  },
+
   setSelectedNodeIds: (ids) => set({ selectedNodeIds: ids }),
 
-  clearSelection: () => set({ selectedNodeIds: new Set(), selectedNodeId: null }),
+  clearSelection: () => set({ selectedNodeIds: new Set(), selectedNodeId: null, selectedWorkflowIds: new Set(), selectedWorkflowId: null }),
 
   openConfig: (id) => {
     const state = get();
@@ -120,7 +155,13 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       const node = state.nodes.get(id);
       if (node) {
         const wfId = node.workflowId === UNASSIGNED_WORKFLOW_ID ? null : node.workflowId;
-        set({ configNodeId: id, selectedNodeId: id, selectedEdgeId: null, selectedWorkflowId: wfId });
+        set({
+          configNodeId: id,
+          selectedNodeId: id,
+          selectedEdgeId: null,
+          selectedWorkflowId: wfId,
+          selectedWorkflowIds: wfId ? new Set([wfId]) : new Set(),
+        });
         return;
       }
     }
