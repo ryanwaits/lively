@@ -43,7 +43,7 @@ function liveObjectToWorkflow(lo: LiveObject): WorkflowRecord | null {
   } catch {
     stream = {
       streamId: null, status: "draft", lastDeployedAt: null, errorMessage: null,
-      totalDeliveries: 0, failedDeliveries: 0, lastTriggeredAt: null, lastTriggeredBlock: null,
+      totalDeliveries: 0, failedDeliveries: 0, lastTriggeredAt: null, lastTriggeredBlock: null, deliveringUntil: null,
     };
   }
   return {

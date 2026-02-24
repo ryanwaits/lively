@@ -27,15 +27,18 @@ export function useStreamPolling(mutations: WorkflowMutationsApi) {
           };
           const currentWf = useBoardStore.getState().workflows.get(wfId);
           if (!currentWf) return;
+          const newTotal = res.totalDeliveries ?? 0;
+          const hadDelivery = newTotal > currentWf.stream.totalDeliveries;
           mutations.updateWorkflow(wfId, {
             stream: {
               ...currentWf.stream,
               status: (statusMap[res.status] ?? res.status) as "active" | "paused" | "failed",
-              totalDeliveries: res.totalDeliveries ?? 0,
+              totalDeliveries: newTotal,
               failedDeliveries: res.failedDeliveries ?? 0,
               lastTriggeredAt: res.lastTriggeredAt ?? null,
               lastTriggeredBlock: res.lastTriggeredBlock ?? null,
               errorMessage: res.errorMessage ?? null,
+              deliveringUntil: hadDelivery ? Date.now() + 5000 : currentWf.stream.deliveringUntil,
             },
           });
         }).catch((err) => {
@@ -45,7 +48,7 @@ export function useStreamPolling(mutations: WorkflowMutationsApi) {
             mutations.updateWorkflow(wfId, {
               stream: {
                 streamId: null, status: "draft", lastDeployedAt: null, errorMessage: null,
-                totalDeliveries: 0, failedDeliveries: 0, lastTriggeredAt: null, lastTriggeredBlock: null,
+                totalDeliveries: 0, failedDeliveries: 0, lastTriggeredAt: null, lastTriggeredBlock: null, deliveringUntil: null,
               },
             });
           }

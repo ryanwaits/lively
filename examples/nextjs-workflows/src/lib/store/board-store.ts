@@ -17,6 +17,7 @@ export const DEFAULT_STREAM: StreamState = {
   failedDeliveries: 0,
   lastTriggeredAt: null,
   lastTriggeredBlock: null,
+  deliveringUntil: null,
 };
 
 interface BoardState {

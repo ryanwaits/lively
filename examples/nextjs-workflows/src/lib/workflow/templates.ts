@@ -19,6 +19,7 @@ export const DEFAULT_STREAM: StreamState = {
   failedDeliveries: 0,
   lastTriggeredAt: null,
   lastTriggeredBlock: null,
+  deliveringUntil: null,
 };
 
 /** Fixed room ID — everyone joins the same board. */

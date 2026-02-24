@@ -1,12 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useBoardStore } from "@/lib/store/board-store";
 import { NODE_DEFINITIONS } from "@/lib/workflow/node-definitions";
 import { getPortPosition } from "@/components/nodes/node-port";
 import { computeBezierPath } from "@/lib/workflow/edge-routing";
 import { NODE_WIDTH, getNodeHeight } from "@/components/nodes/base-node";
 
-/** Animated dots that flow along a bezier edge path */
+/** Animated dots that flow along a bezier edge path — plays 2 loops then stops */
 function FlowParticles({ pathD, edgeId }: { pathD: string; edgeId: string }) {
   const particles = [
     { delay: "0s", dur: "2.5s" },
@@ -20,7 +21,7 @@ function FlowParticles({ pathD, edgeId }: { pathD: string; edgeId: string }) {
         <circle key={`${edgeId}-p${i}`} r="3" fill="#7b61ff" filter="url(#flowGlow)">
           <animateMotion
             dur={p.dur}
-            repeatCount="indefinite"
+            repeatCount="2"
             begin={p.delay}
             path={pathD}
             rotate="auto"
@@ -31,7 +32,7 @@ function FlowParticles({ pathD, edgeId }: { pathD: string; edgeId: string }) {
             keyTimes="0;0.1;0.9;1"
             dur={p.dur}
             begin={p.delay}
-            repeatCount="indefinite"
+            repeatCount="2"
           />
         </circle>
       ))}
@@ -45,9 +46,30 @@ export function EdgeLayer() {
   const selectedEdgeId = useBoardStore((s) => s.selectedEdgeId);
   const selectEdge = useBoardStore((s) => s.selectEdge);
   const workflows = useBoardStore((s) => s.workflows);
+  const [, forceRender] = useState(0);
 
   // Check if any workflow is active (for the glow filter)
   const anyActive = Array.from(workflows.values()).some((wf) => wf.stream.status === "active");
+
+  // Collect all active deliveringUntil timestamps to schedule re-render when they expire
+  const deliveringUntils: number[] = [];
+  for (const wf of workflows.values()) {
+    if (wf.stream.deliveringUntil && wf.stream.deliveringUntil > Date.now()) {
+      deliveringUntils.push(wf.stream.deliveringUntil);
+    }
+  }
+  const soonestExpiry = deliveringUntils.length > 0 ? Math.min(...deliveringUntils) : null;
+
+  useEffect(() => {
+    if (!soonestExpiry) return;
+    const remaining = soonestExpiry - Date.now();
+    if (remaining <= 0) {
+      forceRender((n) => n + 1);
+      return;
+    }
+    const timer = setTimeout(() => forceRender((n) => n + 1), remaining);
+    return () => clearTimeout(timer);
+  }, [soonestExpiry]);
 
   return (
     <g>
@@ -72,6 +94,7 @@ export function EdgeLayer() {
         // Derive active state from the source node's workflow
         const wf = workflows.get(sourceNode.workflowId);
         const isActive = wf?.stream.status === "active";
+        const isDelivering = !!(wf?.stream.deliveringUntil && wf.stream.deliveringUntil > Date.now());
 
         const sourceDef = NODE_DEFINITIONS[sourceNode.type];
         const targetDef = NODE_DEFINITIONS[targetNode.type];
@@ -132,8 +155,10 @@ export function EdgeLayer() {
               )}
             </path>
 
-            {/* Flow particles when workflow is active */}
-            {isActive && <FlowParticles pathD={pathD} edgeId={edge.id} />}
+            {/* Flow particles only during delivery window — key remounts on new delivery */}
+            {isDelivering && (
+              <FlowParticles key={wf!.stream.deliveringUntil} pathD={pathD} edgeId={edge.id} />
+            )}
           </g>
         );
       })}
