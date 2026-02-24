@@ -181,6 +181,93 @@ export function useWorkflowMutations() {
     [],
   );
 
+  const createWorkflowWithNodes = useMutation(
+    ({ storage }, wf: WorkflowRecord, nodeIds: string[], edgeIds: string[], webhookNodeId?: string) => {
+      const workflows = storage.root.get("workflows") as LiveMap<LiveObject>;
+      const nodes = storage.root.get("nodes") as LiveMap<LiveObject>;
+      const edges = storage.root.get("edges") as LiveMap<LiveObject>;
+
+      // Create workflow record
+      workflows.set(wf.id, new LO({
+        id: wf.id,
+        name: wf.name,
+        stream: JSON.stringify(wf.stream),
+      }));
+
+      // Assign all nodes
+      for (const id of nodeIds) {
+        const node = nodes.get(id);
+        if (node) node.update({ workflowId: wf.id });
+      }
+
+      // Assign all edges
+      for (const id of edgeIds) {
+        const edge = edges.get(id);
+        if (edge) edge.update({ workflowId: wf.id });
+      }
+
+      // Auto-populate webhook URL
+      if (webhookNodeId) {
+        const webhookNode = nodes.get(webhookNodeId);
+        if (webhookNode) {
+          const rawConfig = webhookNode.get("config");
+          const config = typeof rawConfig === "string" ? JSON.parse(rawConfig) : (rawConfig ?? {});
+          const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/${wf.id}`;
+          webhookNode.update({ config: JSON.stringify({ ...config, url: webhookUrl }) });
+        }
+      }
+    },
+    [],
+  );
+
+  const reassignWorkflowChain = useMutation(
+    ({ storage }, wfId: string, nodeIds: string[], edgeIds: string[], webhookNodeId?: string) => {
+      const nodes = storage.root.get("nodes") as LiveMap<LiveObject>;
+      const edges = storage.root.get("edges") as LiveMap<LiveObject>;
+
+      const chainNodeSet = new Set(nodeIds);
+      const chainEdgeSet = new Set(edgeIds);
+
+      // Reset stale nodes no longer in the chain
+      nodes.forEach((lo: LiveObject) => {
+        if (lo.toObject().workflowId === wfId && !chainNodeSet.has(lo.get("id") as string)) {
+          lo.update({ workflowId: UNASSIGNED_WORKFLOW_ID });
+        }
+      });
+
+      // Reset stale edges no longer in the chain
+      edges.forEach((lo: LiveObject) => {
+        if (lo.toObject().workflowId === wfId && !chainEdgeSet.has(lo.get("id") as string)) {
+          lo.update({ workflowId: UNASSIGNED_WORKFLOW_ID });
+        }
+      });
+
+      // Assign current chain members
+      for (const id of nodeIds) {
+        const node = nodes.get(id);
+        if (node) node.update({ workflowId: wfId });
+      }
+      for (const id of edgeIds) {
+        const edge = edges.get(id);
+        if (edge) edge.update({ workflowId: wfId });
+      }
+
+      // Auto-populate webhook URL
+      if (webhookNodeId) {
+        const webhookNode = nodes.get(webhookNodeId);
+        if (webhookNode) {
+          const rawConfig = webhookNode.get("config");
+          const config = typeof rawConfig === "string" ? JSON.parse(rawConfig) : (rawConfig ?? {});
+          if (!config.url) {
+            const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/${wfId}`;
+            webhookNode.update({ config: JSON.stringify({ ...config, url: webhookUrl }) });
+          }
+        }
+      }
+    },
+    [],
+  );
+
   const updateBoardMeta = useMutation(
     ({ storage }, updates: Partial<BoardMeta>) => {
       const boardMeta = storage.root.get("boardMeta") as LiveObject;
@@ -215,6 +302,7 @@ export function useWorkflowMutations() {
     addEdge, deleteEdge,
     addWorkflow, updateWorkflow, deleteWorkflow,
     unlinkWorkflow, setWorkflowIds,
+    createWorkflowWithNodes, reassignWorkflowChain,
     updateBoardMeta, moveNodes, updateCursor,
   };
 }

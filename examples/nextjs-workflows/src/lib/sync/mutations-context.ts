@@ -11,6 +11,8 @@ export interface WorkflowMutationsApi {
   deleteWorkflow: (wfId: string) => void;
   unlinkWorkflow: (wfId: string) => void;
   setWorkflowIds: (nodeIds: string[], edgeIds: string[], workflowId: string) => void;
+  createWorkflowWithNodes: (wf: WorkflowRecord, nodeIds: string[], edgeIds: string[], webhookNodeId?: string) => void;
+  reassignWorkflowChain: (wfId: string, nodeIds: string[], edgeIds: string[], webhookNodeId?: string) => void;
   updateBoardMeta: (updates: Partial<BoardMeta>) => void;
   moveNodes: (updates: { id: string; position: { x: number; y: number } }[]) => void;
   updateCursor: (x: number, y: number) => void;
