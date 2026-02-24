@@ -12,7 +12,7 @@ import { WorkflowCanvas, type CanvasHandle } from "@/components/canvas/workflow-
 import { NodeLayer } from "@/components/canvas/node-layer";
 import { EdgeLayer } from "@/components/canvas/edge-layer";
 import { ConnectionDraftLayer } from "@/components/canvas/connection-draft-layer";
-import { WorkflowOverlaysLayer } from "@/components/canvas/workflow-overlays-layer";
+import { WorkflowRegionsLayer, WorkflowBadgesLayer } from "@/components/canvas/workflow-overlays-layer";
 import { PlacementGhost } from "@/components/canvas/placement-ghost";
 import { useCanvasInteractionStore } from "@/lib/store/canvas-interaction-store";
 import { NodeConfigPanel } from "@/components/sidebar/node-config-panel";
@@ -331,10 +331,11 @@ function WorkflowPageInner({ boardId }: { boardId: string }) {
         </div>
 
         <WorkflowCanvas ref={canvasRef} workflowId={boardId} onCanvasClick={handleCanvasClick}>
-          <WorkflowOverlaysLayer mutations={mutations} boardId={boardId} />
+          <WorkflowRegionsLayer />
           <EdgeLayer />
           <ConnectionDraftLayer />
           <NodeLayer onPortPointerDown={handlePortPointerDown} />
+          <WorkflowBadgesLayer mutations={mutations} boardId={boardId} />
           <PlacementGhost svgElement={svgElement} />
         </WorkflowCanvas>
 
