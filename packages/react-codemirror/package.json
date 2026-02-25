@@ -23,8 +23,8 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/lively-yjs": "workspace:*",
-    "@waits/lively-react": "workspace:*",
+    "@waits/lively-yjs": "^0.0.1",
+    "@waits/lively-react": "^0.0.1",
     "@codemirror/language-data": "^6.5.2",
     "@codemirror/lang-markdown": "^6.5.0",
     "y-codemirror.next": "^0.3.5"

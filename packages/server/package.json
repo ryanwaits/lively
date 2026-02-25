@@ -23,8 +23,8 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/lively-storage": "workspace:*",
-    "@waits/lively-types": "workspace:*",
+    "@waits/lively-storage": "^0.0.1",
+    "@waits/lively-types": "^0.0.1",
     "ws": "^8.19.0",
     "yjs": "^13.6.29"
   },

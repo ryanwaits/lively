@@ -23,8 +23,8 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/lively-react": "workspace:*",
-    "@waits/lively-types": "workspace:*"
+    "@waits/lively-react": "^0.0.1",
+    "@waits/lively-types": "^0.0.1"
   },
   "peerDependencies": {
     "react": ">=18",

@@ -27,7 +27,7 @@
   },
   "peerDependencies": {
     "yjs": "^13",
-    "@waits/lively-client": "workspace:*"
+    "@waits/lively-client": "^0.0.1"
   },
   "devDependencies": {
     "@waits/lively-client": "workspace:*",
