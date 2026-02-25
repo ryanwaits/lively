@@ -5,13 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "dev:server": "bun run server/lively.ts",
+    "prebuild": "cd ../.. && bun run build:packages",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
-    "@waits/lively-client": "workspace:*",
-    "@waits/lively-react": "workspace:*",
-    "@waits/lively-ui": "workspace:*",
+    "@waits/lively-client": "^0.0.1",
+    "@waits/lively-react": "^0.0.1",
+    "@waits/lively-ui": "^0.0.1",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
@@ -21,7 +22,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@waits/lively-server": "workspace:*",
+    "@waits/lively-server": "^0.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
