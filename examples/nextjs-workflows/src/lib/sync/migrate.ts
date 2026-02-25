@@ -13,7 +13,6 @@ const DEFAULT_STREAM: StreamState = {
   failedDeliveries: 0,
   lastTriggeredAt: null,
   lastTriggeredBlock: null,
-  deliveringUntil: null,
 };
 
 /**
@@ -53,8 +52,7 @@ export function migrateRoomStorage(root: LiveObject): boolean {
       failedDeliveries: (raw.failedDeliveries as number) || 0,
       lastTriggeredAt: (raw.lastTriggeredAt as string) || null,
       lastTriggeredBlock: (raw.lastTriggeredBlock as number) || null,
-      deliveringUntil: null,
-    };
+        };
   }
 
   const workflows = new LM<LiveObject>();

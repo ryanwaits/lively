@@ -114,7 +114,7 @@ export function useStreamDeploy(mutations: WorkflowMutationsApi, workflowId: str
       mutations.updateWorkflow(workflowId, {
         stream: {
           streamId: null, status: "draft", lastDeployedAt: null, errorMessage: null,
-          totalDeliveries: 0, failedDeliveries: 0, lastTriggeredAt: null, lastTriggeredBlock: null, deliveringUntil: null,
+          totalDeliveries: 0, failedDeliveries: 0, lastTriggeredAt: null, lastTriggeredBlock: null,
         },
       });
     } catch (err) {

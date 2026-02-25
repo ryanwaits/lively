@@ -56,7 +56,6 @@ export interface StreamState {
   failedDeliveries: number;
   lastTriggeredAt: string | null;
   lastTriggeredBlock: number | null;
-  deliveringUntil: number | null;
 }
 
 export interface WorkflowRecord {

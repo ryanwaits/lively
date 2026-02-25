@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBoardStore } from "@/lib/store/board-store";
+import { useDeliverySignalStore } from "@/lib/store/delivery-signal-store";
 import { NODE_DEFINITIONS } from "@/lib/workflow/node-definitions";
 import { getPortPosition } from "@/components/nodes/node-port";
 import { computeBezierPath } from "@/lib/workflow/edge-routing";
@@ -47,19 +48,19 @@ export function EdgeLayer() {
   const selectedEdgeId = useBoardStore((s) => s.selectedEdgeId);
   const selectEdge = useBoardStore((s) => s.selectEdge);
   const workflows = useBoardStore((s) => s.workflows);
+  const signals = useDeliverySignalStore((s) => s.signals);
   const [, forceRender] = useState(0);
 
   // Check if any workflow is active (for the glow filter)
   const anyActive = Array.from(workflows.values()).some((wf) => wf.stream.status === "active");
 
-  // Collect all active deliveringUntil timestamps to schedule re-render when they expire
-  const deliveringUntils: number[] = [];
-  for (const wf of workflows.values()) {
-    if (wf.stream.deliveringUntil && wf.stream.deliveringUntil > Date.now()) {
-      deliveringUntils.push(wf.stream.deliveringUntil);
-    }
+  // Schedule re-render when soonest delivery signal expires
+  const now = Date.now();
+  const activeExpiries: number[] = [];
+  for (const ts of signals.values()) {
+    if (ts > now) activeExpiries.push(ts);
   }
-  const soonestExpiry = deliveringUntils.length > 0 ? Math.min(...deliveringUntils) : null;
+  const soonestExpiry = activeExpiries.length > 0 ? Math.min(...activeExpiries) : null;
 
   useEffect(() => {
     if (!soonestExpiry) return;
@@ -95,7 +96,8 @@ export function EdgeLayer() {
         // Derive active state from the source node's workflow
         const wf = workflows.get(sourceNode.workflowId);
         const isActive = wf?.stream.status === "active";
-        const isDelivering = !!(wf?.stream.deliveringUntil && wf.stream.deliveringUntil > Date.now());
+        const deliveringUntil = wf ? signals.get(wf.id) : undefined;
+        const isDelivering = !!(deliveringUntil && deliveringUntil > Date.now());
 
         const sourceDef = NODE_DEFINITIONS[sourceNode.type];
         const targetDef = NODE_DEFINITIONS[targetNode.type];
@@ -158,7 +160,7 @@ export function EdgeLayer() {
 
             {/* Flow particles only during delivery window — key remounts on new delivery */}
             {isDelivering && (
-              <FlowParticles key={wf!.stream.deliveringUntil} pathD={pathD} edgeId={edge.id} />
+              <FlowParticles key={deliveringUntil} pathD={pathD} edgeId={edge.id} />
             )}
           </g>
         );

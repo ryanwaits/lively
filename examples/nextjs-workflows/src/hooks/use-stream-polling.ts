@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useBoardStore } from "@/lib/store/board-store";
+import { useDeliverySignalStore } from "@/lib/store/delivery-signal-store";
 import { streamsApi } from "@/lib/api/streams-client";
 import type { WorkflowMutationsApi } from "@/lib/sync/mutations-context";
 
@@ -29,6 +30,9 @@ export function useStreamPolling(mutations: WorkflowMutationsApi) {
           if (!currentWf) return;
           const newTotal = res.totalDeliveries ?? 0;
           const hadDelivery = newTotal > currentWf.stream.totalDeliveries;
+          if (hadDelivery) {
+            useDeliverySignalStore.getState().signalDelivery(wfId);
+          }
           mutations.updateWorkflow(wfId, {
             stream: {
               ...currentWf.stream,
@@ -38,7 +42,6 @@ export function useStreamPolling(mutations: WorkflowMutationsApi) {
               lastTriggeredAt: res.lastTriggeredAt ?? null,
               lastTriggeredBlock: res.lastTriggeredBlock ?? null,
               errorMessage: res.errorMessage ?? null,
-              deliveringUntil: hadDelivery ? Date.now() + 5000 : currentWf.stream.deliveringUntil,
             },
           });
         }).catch((err) => {
@@ -48,7 +51,7 @@ export function useStreamPolling(mutations: WorkflowMutationsApi) {
             mutations.updateWorkflow(wfId, {
               stream: {
                 streamId: null, status: "draft", lastDeployedAt: null, errorMessage: null,
-                totalDeliveries: 0, failedDeliveries: 0, lastTriggeredAt: null, lastTriggeredBlock: null, deliveringUntil: null,
+                totalDeliveries: 0, failedDeliveries: 0, lastTriggeredAt: null, lastTriggeredBlock: null,
               },
             });
           }
