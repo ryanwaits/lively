@@ -32,9 +32,9 @@ export function logLeave(roomId: string, displayName: string): void {
   );
 }
 
-export function logStorageChange(roomId: string, opCount: number): void {
+export function logRoomSaved(roomId: string): void {
   console.log(
-    `${timestamp()} ${chalk.yellow("●")} ${chalk.cyan(roomId)} ${chalk.dim(`${opCount} op${opCount !== 1 ? "s" : ""} → saved`)}`
+    `${timestamp()} ${chalk.yellow("●")} ${chalk.cyan(roomId)} ${chalk.dim("saved")}`
   );
 }
 

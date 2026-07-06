@@ -1,11 +1,11 @@
-import { LivelyServer } from "@waits/lively-server";
+import { LivelyServer, PersistenceBinding } from "@waits/lively-server";
 import ora from "ora";
 import { RoomPersistence } from "../persistence.js";
 import {
   printBanner,
   logJoin,
   logLeave,
-  logStorageChange,
+  logRoomSaved,
   logRoomCreated,
 } from "../logger.js";
 
@@ -24,29 +24,12 @@ export async function startDevServer(opts: DevServerOpts): Promise<void> {
   await persistence.ensureDir();
 
   const seenRooms = new Set<string>();
-  const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  const binding = new PersistenceBinding(persistence, {
+    onSave: (roomId) => logRoomSaved(roomId),
+  });
 
   const server = new LivelyServer({
-    initialStorage: async (roomId) => {
-      return persistence.load(roomId);
-    },
-    onStorageChange: (roomId, ops) => {
-      // Clear existing timer for this room
-      const existing = debounceTimers.get(roomId);
-      if (existing) clearTimeout(existing);
-
-      // Debounce: coalesce writes within 200ms
-      const timer = setTimeout(async () => {
-        debounceTimers.delete(roomId);
-        const room = server.getRoomManager().get(roomId);
-        const doc = room?.getStorageDocument();
-        if (!doc) return;
-        await persistence.save(roomId, doc.serialize());
-        logStorageChange(roomId, ops.length);
-      }, 200);
-
-      debounceTimers.set(roomId, timer);
-    },
+    ...binding.hooks(),
     onJoin: (roomId, user) => {
       if (!seenRooms.has(roomId)) {
         seenRooms.add(roomId);
@@ -58,6 +41,7 @@ export async function startDevServer(opts: DevServerOpts): Promise<void> {
       logLeave(roomId, user.displayName ?? user.id);
     },
   });
+  binding.attach(server);
 
   const spinner = ora("Starting dev server...").start();
   await server.start(opts.port);
@@ -65,24 +49,9 @@ export async function startDevServer(opts: DevServerOpts): Promise<void> {
 
   printBanner(server.port, opts.dataDir);
 
-  // Flush all pending debounced writes
-  async function flushAll(): Promise<void> {
-    const pending: Promise<void>[] = [];
-    for (const [roomId, timer] of debounceTimers) {
-      clearTimeout(timer);
-      debounceTimers.delete(roomId);
-      const room = server.getRoomManager().get(roomId);
-      const doc = room?.getStorageDocument();
-      if (doc) {
-        pending.push(persistence.save(roomId, doc.serialize()));
-      }
-    }
-    await Promise.all(pending);
-  }
-
   async function shutdown(): Promise<void> {
     console.log("\nShutting down...");
-    await flushAll();
+    await binding.flush();
     await server.stop();
     process.exit(0);
   }

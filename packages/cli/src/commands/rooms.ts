@@ -142,7 +142,7 @@ roomsCommand
   .option("--data-dir <path>", "Data directory", ".lively")
   .action(async (roomId: string, opts) => {
     const persistence = new RoomPersistence(opts.dataDir);
-    const root = await persistence.load(roomId);
+    const root = await persistence.loadStorage(roomId);
 
     if (!root) {
       console.log(chalk.red(`Room "${roomId}" not found.`));
