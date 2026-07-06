@@ -62,3 +62,6 @@ research/*
 
 # Next static exports (examples)
 out/
+
+# PR gallery assets — attached to PR, not committed
+apps/umbrel/store/gallery/
