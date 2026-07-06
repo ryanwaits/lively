@@ -17,6 +17,7 @@ export type {
   OnMessageHandler,
   OnJoinHandler,
   OnLeaveHandler,
+  OnRequestHandler,
   OnStorageChangeHandler,
   InitialStorageHandler,
   InitialYjsHandler,

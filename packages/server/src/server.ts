@@ -7,6 +7,7 @@ import type { StorageOp, SerializedCrdt } from "@waits/lively-types";
 import * as Y from "yjs";
 import { Room } from "./room.js";
 import { RoomManager } from "./room-manager.js";
+import { serveStaticFile } from "./static-files.js";
 import type {
   ServerConfig,
   PresenceUser,
@@ -14,6 +15,7 @@ import type {
   OnMessageHandler,
   OnJoinHandler,
   OnLeaveHandler,
+  OnRequestHandler,
   OnStorageChangeHandler,
   InitialStorageHandler,
   InitialYjsHandler,
@@ -58,6 +60,8 @@ export class LivelyServer {
 
   private path: string;
   private healthPath: string;
+  private staticDir?: string;
+  private onRequest?: OnRequestHandler;
   private auth?: AuthHandler;
   private cleanupTimeoutMs: number;
   private maxConnections?: number;
@@ -91,6 +95,8 @@ export class LivelyServer {
   constructor(config: ServerConfig = {}) {
     this.path = config.path ?? DEFAULT_PATH;
     this.healthPath = config.healthPath ?? "/health";
+    this.staticDir = config.staticDir;
+    this.onRequest = config.onRequest;
     this.auth = config.auth;
     this.cleanupTimeoutMs =
       config.roomConfig?.cleanupTimeoutMs ?? DEFAULT_CLEANUP_MS;
@@ -104,13 +110,7 @@ export class LivelyServer {
     this.onYjsChange = config.onYjsChange;
 
     this.httpServer = http.createServer((req, res) => {
-      if (req.method === "GET" && req.url === this.healthPath) {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ status: "ok" }));
-        return;
-      }
-      res.writeHead(426);
-      res.end("Upgrade required");
+      void this.handleRequest(req, res);
     });
 
     this.httpServer.on("connection", (socket) => {
@@ -256,6 +256,44 @@ export class LivelyServer {
   /** Expose room manager for advanced use. */
   getRoomManager(): RoomManager {
     return this.roomManager;
+  }
+
+  // ── HTTP ─────────────────────────────────────────────────
+
+  private async handleRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse
+  ): Promise<void> {
+    try {
+      const pathname = (req.url ?? "/").split("?")[0];
+
+      if (req.method === "GET" && pathname === this.healthPath) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "ok" }));
+        return;
+      }
+
+      if (this.onRequest) {
+        const handled = await this.onRequest(req, res);
+        if (handled) return;
+      }
+
+      if (this.staticDir && (req.method === "GET" || req.method === "HEAD")) {
+        const served = await serveStaticFile(this.staticDir, req, res);
+        if (served) return;
+        res.writeHead(404, { "Content-Type": "text/plain" });
+        res.end("Not found");
+        return;
+      }
+
+      res.writeHead(426);
+      res.end("Upgrade required");
+    } catch {
+      if (!res.headersSent) {
+        res.writeHead(500, { "Content-Type": "text/plain" });
+      }
+      res.end("Internal server error");
+    }
   }
 
   // ── Upgrade ──────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import type { IncomingMessage } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import type WebSocket from "ws";
 
 // Re-export shared types from @waits/lively-types
@@ -44,6 +44,18 @@ export interface ServerConfig {
   healthPath?: string;
   auth?: AuthHandler;
   roomConfig?: RoomConfig;
+  /**
+   * Directory of static files to serve for plain HTTP requests.
+   * Resolves like a Next.js static export: `/foo` tries `foo`,
+   * `foo.html`, then `foo/index.html`. Unmatched requests get 404.
+   */
+  staticDir?: string;
+  /**
+   * Custom HTTP handler, checked after the health endpoint and before
+   * static files. Return true if the request was handled (response
+   * written), false to fall through.
+   */
+  onRequest?: OnRequestHandler;
   onMessage?: OnMessageHandler;
   onJoin?: OnJoinHandler;
   onLeave?: OnLeaveHandler;
@@ -52,6 +64,13 @@ export interface ServerConfig {
   initialYjs?: InitialYjsHandler;
   onYjsChange?: OnYjsChangeHandler;
 }
+
+// --- HTTP ---
+
+export type OnRequestHandler = (
+  req: IncomingMessage,
+  res: ServerResponse
+) => boolean | Promise<boolean>;
 
 // --- Storage Callbacks ---
 
