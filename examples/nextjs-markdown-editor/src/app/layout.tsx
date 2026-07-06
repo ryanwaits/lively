@@ -1,5 +1,21 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
+
+// Self-hosted (SIL OFL) — no runtime font CDN. Latin-subset variable fonts.
+const inter = localFont({
+  src: "./fonts/inter-latin-var.woff2",
+  weight: "400 600",
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrainsMono = localFont({
+  src: "./fonts/jetbrains-mono-latin-var.woff2",
+  weight: "400 500",
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Markdown Editor — Lively",
@@ -19,7 +35,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="bg-white text-[#333] antialiased h-screen overflow-hidden">
         {children}
       </body>
