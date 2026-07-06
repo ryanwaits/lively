@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth-store";
-import { fetchBoards, type Board } from "@/lib/supabase/boards";
+import { fetchBoards, type Board } from "@/lib/api/boards";
 import { NameDialog } from "@/components/auth/name-dialog";
 import { BoardCard } from "@/components/boards/board-card";
 import { CreateBoardDialog } from "@/components/boards/create-board-dialog";

@@ -21,7 +21,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { ColorPicker } from "./color-picker";
-import { fetchBoards, type Board } from "@/lib/supabase/boards";
+import { fetchBoards, type Board } from "@/lib/api/boards";
 import { useAuthStore } from "@/lib/store/auth-store";
 import type { ToolMode } from "@/types/board";
 

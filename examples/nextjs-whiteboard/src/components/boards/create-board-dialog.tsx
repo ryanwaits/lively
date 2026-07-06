@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/store/auth-store";
-import { createBoard } from "@/lib/supabase/boards";
+import { createBoard } from "@/lib/api/boards";
 
 export function CreateBoardDialog({
   open,

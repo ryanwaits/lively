@@ -2,8 +2,11 @@
 
 import { LivelyClient, LiveObject, LiveMap } from "@waits/lively-client";
 
-const serverUrl =
-  process.env.NEXT_PUBLIC_LIVELY_HOST || "http://localhost:1999";
+export const serverUrl =
+  process.env.NEXT_PUBLIC_LIVELY_HOST ||
+  (typeof window !== "undefined" && process.env.NODE_ENV === "production"
+    ? window.location.origin
+    : "http://localhost:1999");
 
 export const client = new LivelyClient({ serverUrl, reconnect: true });
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Board } from "@/lib/supabase/boards";
+import type { Board } from "@/lib/api/boards";
 
 const ACCENT_COLORS = [
   "bg-blue-500",
