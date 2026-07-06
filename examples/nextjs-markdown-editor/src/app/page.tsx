@@ -66,7 +66,7 @@ export default function EditorPage() {
   return (
     <LivelyProvider client={client}>
       <RoomProvider
-        roomId="editor-default"
+        roomId="markdown-default"
         userId={userId}
         displayName={displayName}
         initialStorage={{
