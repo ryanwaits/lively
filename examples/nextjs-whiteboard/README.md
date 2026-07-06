@@ -116,7 +116,7 @@ server URL if you run it elsewhere.
 ```
 src/
   app/
-    board/[id]/page.tsx      Main board — all interaction logic
+    board/page.tsx           Main board (?id=<boardId>) — all interaction logic
     api/ai/route.ts          AI agentic loop (Claude + 13 tools)
   components/
     canvas/                  SVG canvas, shapes, selection, drawing layers

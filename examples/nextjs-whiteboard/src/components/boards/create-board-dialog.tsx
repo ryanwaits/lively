@@ -35,7 +35,7 @@ export function CreateBoardDialog({
       const board = await createBoard(trimmed, userId);
       onOpenChange(false);
       setName("");
-      router.push(`/board/${board.id}`);
+      router.push(`/board?id=${board.id}`);
     } finally {
       setLoading(false);
     }

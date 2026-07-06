@@ -244,7 +244,7 @@ export function Sidebar({
               {boards.map((board) => (
                 <Link
                   key={board.id}
-                  href={`/board/${board.id}`}
+                  href={`/board?id=${board.id}`}
                   className={`rounded-lg px-3 py-2 text-sm transition-colors ${
                     board.id === currentBoardId
                       ? "bg-blue-50 font-medium text-blue-700"

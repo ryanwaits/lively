@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect, useMemo } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useBoardStore } from "@/lib/store/board-store";
 import { CursorsOverlay } from "@/components/presence/cursors-overlay";
@@ -93,13 +94,39 @@ function PositionedLineFormattingToolbar({ object, onUpdate }: { object: BoardOb
 }
 
 export default function BoardPage() {
-  const params = useParams();
-  const roomId = params.id as string;
+  // useSearchParams requires a Suspense boundary under static export
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-screen items-center justify-center bg-gray-50">
+          <div className="text-gray-400">Loading...</div>
+        </div>
+      }
+    >
+      <BoardPageRoute />
+    </Suspense>
+  );
+}
+
+function BoardPageRoute() {
+  const searchParams = useSearchParams();
+  const roomId = searchParams.get("id");
   const { userId, displayName, isAuthenticated, isLoading, restoreSession } = useAuthStore();
 
   useEffect(() => {
     restoreSession();
   }, [restoreSession]);
+
+  if (!roomId) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-3 bg-gray-50">
+        <div className="text-gray-500">No board selected.</div>
+        <Link href="/" className="text-sm text-blue-600 hover:underline">
+          Back to boards
+        </Link>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

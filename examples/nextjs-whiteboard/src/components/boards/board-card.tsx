@@ -16,12 +16,9 @@ function accentColor(id: string) {
   return ACCENT_COLORS[Math.abs(hash) % ACCENT_COLORS.length];
 }
 
-const DEFAULT_BOARD_ID = "00000000-0000-0000-0000-000000000000";
-
 export function BoardCard({ board, objectCount }: { board: Board; objectCount?: number }) {
-  const slug = board.id === DEFAULT_BOARD_ID ? "default" : board.id;
   return (
-    <Link href={`/board/${slug}`}>
+    <Link href={`/board?id=${board.id}`}>
       <div className="group relative overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
         <div className={`h-2 ${accentColor(board.id)}`} />
         <div className="p-4">
