@@ -8,9 +8,7 @@ services:
       # v1.1 (external WS clients): PROXY_AUTH_WHITELIST: "/rooms/*"
 
   web:
-    # Replace <digest> with the manifest-list digest from the release workflow:
-    #   docker buildx imagetools inspect ghcr.io/ryanwaits/lively:0.1.0
-    image: ghcr.io/ryanwaits/lively:0.1.0@sha256:<digest>
+    image: ghcr.io/ryanwaits/lively:0.1.0@sha256:72bfc538a9a13834da6cc33444661f98ecbee1bde756b6d5f68ab91646c139f4
     restart: on-failure
     stop_grace_period: 30s
     user: "1000:1000"
