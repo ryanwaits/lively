@@ -1,5 +1,29 @@
 import { create } from "zustand";
-import { signInAnonymously, getSession, signOut as supabaseSignOut } from "@/lib/supabase/auth";
+
+const STORAGE_KEY = "lively-whiteboard-user";
+
+interface StoredUser {
+  userId: string;
+  displayName: string;
+}
+
+function readStoredUser(): StoredUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredUser>;
+    if (
+      typeof parsed.userId === "string" &&
+      typeof parsed.displayName === "string"
+    ) {
+      return { userId: parsed.userId, displayName: parsed.displayName };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 interface AuthState {
   userId: string | null;
@@ -18,35 +42,27 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
 
   signIn: async (displayName: string) => {
-    const { session } = await signInAnonymously(displayName);
-    if (session) {
-      set({
-        userId: session.user.id,
-        displayName,
-        isAuthenticated: true,
-      });
-    }
+    // Keep a stable identity across name changes and sessions
+    const userId = readStoredUser()?.userId ?? crypto.randomUUID();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ userId, displayName }));
+    set({ userId, displayName, isAuthenticated: true, isLoading: false });
   },
 
   signOut: async () => {
-    await supabaseSignOut();
+    localStorage.removeItem(STORAGE_KEY);
     set({ userId: null, displayName: null, isAuthenticated: false });
   },
 
   restoreSession: async () => {
-    try {
-      const session = await getSession();
-      if (session) {
-        set({
-          userId: session.user.id,
-          displayName: session.user.user_metadata?.display_name || "Anonymous",
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      } else {
-        set({ isLoading: false });
-      }
-    } catch {
+    const user = readStoredUser();
+    if (user) {
+      set({
+        userId: user.userId,
+        displayName: user.displayName,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } else {
       set({ isLoading: false });
     }
   },
