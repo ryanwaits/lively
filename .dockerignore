@@ -1,19 +1,19 @@
-node_modules
-.next
 .git
 .env*
+node_modules
+**/node_modules
+**/.next
+**/out
+**/.lively
+**/dist
+Dockerfile*
+*.md
+docs/
 
-# Client-side packages — keep package.json for workspace resolution, exclude src
-packages/client/src/
-packages/client/dist/
-packages/react/src/
-packages/react/dist/
-packages/ui/src/
-packages/ui/dist/
-
-# Example app frontend (only server/ and src/types/ needed)
-examples/nextjs-whiteboard/src/app/
-examples/nextjs-whiteboard/src/components/
-examples/nextjs-whiteboard/src/lib/
-examples/nextjs-whiteboard/src/hooks/
-examples/nextjs-whiteboard/.next/
+# Workspaces not built into the image — keep manifests for lockfile resolution
+apps/web/**
+!apps/web/package.json
+examples/nextjs-collab-editor/**
+!examples/nextjs-collab-editor/package.json
+examples/nextjs-workflows/**
+!examples/nextjs-workflows/package.json

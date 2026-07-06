@@ -1,32 +1,49 @@
-FROM oven/bun:1
+# Lively — single-container image: standalone server + four static app exports.
+# Build:  docker build -t lively .
+# Run:    docker run -p 8080:8080 -v lively-data:/data lively
+
+# ---- build ----
+FROM oven/bun:1 AS build
+WORKDIR /repo
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY . .
+RUN bun install --frozen-lockfile
+RUN bun run build:packages
+
+# Static exports (basePath baked into each app's next.config.ts)
+RUN cd examples/nextjs-whiteboard && bunx next build && \
+    cd ../nextjs-notion-editor && bunx next build && \
+    cd ../nextjs-markdown-editor && bunx next build && \
+    cd ../nextjs-todo && bunx next build
+
+# Bundle the server into a single file and assemble the static tree
+RUN bun build apps/umbrel/server.ts --target=bun --outfile=/out/server.js && \
+    mkdir -p /out/static && \
+    cp apps/umbrel/static/index.html /out/static/index.html && \
+    cp -r examples/nextjs-whiteboard/out /out/static/board && \
+    cp -r examples/nextjs-notion-editor/out /out/static/notes && \
+    cp -r examples/nextjs-markdown-editor/out /out/static/markdown && \
+    cp -r examples/nextjs-todo/out /out/static/todo
+
+# ---- runtime ----
+FROM oven/bun:1-slim
 WORKDIR /app
+ENV NODE_ENV=production \
+    PORT=8080 \
+    DATA_DIR=/data \
+    STATIC_DIR=/app/static
 
-# 1. Copy manifests for workspace resolution
-COPY package.json bun.lock ./
-COPY packages/types/package.json packages/types/
-COPY packages/storage/package.json packages/storage/
-COPY packages/server/package.json packages/server/
-COPY packages/client/package.json packages/client/
-COPY packages/react/package.json packages/react/
-COPY packages/ui/package.json packages/ui/
-COPY examples/nextjs-whiteboard/package.json examples/nextjs-whiteboard/
+COPY --from=build /out/server.js ./server.js
+COPY --from=build /out/static ./static
 
-# 2. Install deps (subset of workspaces → lockfile won't match exactly)
-RUN bun install
+RUN mkdir -p /data && chown -R bun:bun /data /app
+USER bun
 
-# 3. Copy + build workspace packages (dependency order)
-COPY packages/types/ packages/types/
-RUN cd packages/types && bun run build
+VOLUME /data
+EXPOSE 8080
 
-COPY packages/storage/ packages/storage/
-RUN cd packages/storage && bun run build
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
+  CMD ["bun", "-e", "fetch(`http://127.0.0.1:${process.env.PORT || 8080}/health`).then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
 
-COPY packages/server/ packages/server/
-RUN cd packages/server && bun run build
-
-# 4. Copy only what the server entry point needs
-COPY examples/nextjs-whiteboard/server/ examples/nextjs-whiteboard/server/
-COPY examples/nextjs-whiteboard/src/types/ examples/nextjs-whiteboard/src/types/
-
-EXPOSE 10000
-CMD ["bun", "run", "examples/nextjs-whiteboard/server/lively.ts"]
+CMD ["bun", "run", "server.js"]
