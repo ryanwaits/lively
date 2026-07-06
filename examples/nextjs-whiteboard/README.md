@@ -91,7 +91,7 @@ All AI mutations write directly to CRDT storage — every user sees results in r
 - [x] Cursor broadcasting via rAF loop (not tied to React render cycle)
 - [x] Render tiers — 4-tier z-ordering prevents cross-tier z-fighting
 - [x] Diff-only CRDT updates — only changed fields transmitted
-- [x] Debounced persistence (2s) and viewport save (300ms)
+- [x] Debounced snapshot persistence and viewport save (300ms)
 - [x] Memoized components and derived state (`React.memo`, `useMemo`)
 
 ## Setup
@@ -100,20 +100,16 @@ All AI mutations write directly to CRDT storage — every user sees results in r
 # Install dependencies
 bun install
 
-# Configure environment
-cp .env.example .env.local
-# Fill in:
-#   NEXT_PUBLIC_SUPABASE_URL
-#   SUPABASE_SERVICE_ROLE_KEY
-#   NEXT_PUBLIC_LIVELY_HOST (default: localhost:1999)
-#   ANTHROPIC_API_KEY
-
-# Start WebSocket server
-bun run server/lively.ts
+# Start the Lively server (WebSocket + boards API + file persistence)
+bun run dev:server
 
 # Start Next.js dev server (separate terminal)
 bun run dev
 ```
+
+Board data persists to `.lively/` as plain files — no database, no
+environment variables required. `NEXT_PUBLIC_LIVELY_HOST` overrides the
+server URL if you run it elsewhere.
 
 ## Architecture
 
@@ -135,17 +131,17 @@ src/
     animation/               Viewport transitions
   hooks/                     Line drawing, freehand drawing
   types/                     BoardObject, Frame, ToolMode, etc.
-server/
-  lively.ts                  WebSocket server entry
-  persistence.ts             Supabase diff-write persistence
 ```
+
+The server is the standalone Lively server (`apps/umbrel/server.ts`):
+WebSocket rooms, whole-snapshot file persistence, and the boards API.
 
 ## Testing Scenarios
 
 | Scenario | Status |
 |---|---|
 | 2 users editing simultaneously in different browsers | Supported |
-| User refreshes mid-edit (state persistence) | Supported — Supabase persistence + CRDT rehydration |
+| User refreshes mid-edit (state persistence) | Supported — file persistence + CRDT rehydration |
 | Rapid sticky note/shape creation and movement | Supported — diff-only sync, batched notifications |
 | Network throttling and disconnection recovery | Supported — auto-reconnect, debounced persistence |
 | 5+ concurrent users without degradation | Supported — viewport culling, rAF cursor loop, CRDT batching |

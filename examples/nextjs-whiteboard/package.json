@@ -4,13 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:server": "bun run server/lively.ts",
+    "dev:server": "PORT=1999 DATA_DIR=.lively bun run ../../apps/umbrel/server.ts",
     "prebuild": "cd ../.. && bun run build:packages",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "sync": "bun run scripts/sync-board.ts",
-    "test": "bun test src server"
+    "test": "bun test src"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.75.0",

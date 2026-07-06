@@ -10,12 +10,23 @@ export interface ApiContext {
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_NAME_LENGTH = 200;
 
+// Allows browser apps served from another origin (e.g. next dev) to call
+// the API. In production everything is same-origin, so this is inert.
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
 function json(
   res: http.ServerResponse,
   status: number,
   body: unknown
 ): true {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+  res.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    ...CORS_HEADERS,
+  });
   res.end(JSON.stringify(body));
   return true;
 }
@@ -42,6 +53,12 @@ export async function handleApiRequest(
 ): Promise<boolean> {
   const pathname = (req.url ?? "/").split("?")[0].replace(/\/+$/, "") || "/";
   if (pathname !== "/api" && !pathname.startsWith("/api/")) return false;
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, CORS_HEADERS);
+    res.end();
+    return true;
+  }
 
   if (pathname === "/api/config" && req.method === "GET") {
     return json(res, 200, ctx.config);
