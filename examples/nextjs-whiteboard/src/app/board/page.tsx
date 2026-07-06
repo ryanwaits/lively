@@ -34,6 +34,7 @@ import { AICommandBar } from "@/components/ai/ai-command-bar";
 import { LivelyProvider, RoomProvider, useSelf, useOthers, useHistory, useFollowUser, useErrorListener, useLostConnectionListener, useOthersListener, useSyncStatus, useUpdateMyPresence } from "@waits/lively-react";
 import { ConnectionBadge } from "@waits/lively-ui";
 import { client, buildInitialStorage } from "@/lib/sync/client";
+import { useServerConfig } from "@/lib/api/config";
 import { useLivelySync } from "@/lib/sync/use-lively-sync";
 import { useBoardMutations } from "@/lib/sync/use-board-mutations";
 
@@ -159,6 +160,7 @@ function BoardPageRoute() {
 }
 
 function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userId: string; displayName: string }) {
+  const { ai: aiEnabled } = useServerConfig();
   const { objects, selectedIds, setSelected, setSelectedIds } = useBoardStore();
   const activeFrameIndex = useFrameStore((s) => s.activeFrameIndex);
   const activeFrameId = useFrameStore((s) => {
@@ -717,7 +719,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         else if (activeTool === "line" || activeTool === "draw" || CREATION_TOOLS.includes(activeTool)) { setActiveTool("select"); }
         else { setSelected(null); }
       }
-      if (e.key === "/" && !editingId) { e.preventDefault(); setAiOpen(true); return; }
+      if (e.key === "/" && !editingId && aiEnabled) { e.preventDefault(); setAiOpen(true); return; }
       if ((e.key === "[" || e.key === "]") && !editingId && !(e.metaKey || e.ctrlKey)) {
         const { frames: sortedFrames, activeFrameIndex } = useFrameStore.getState();
         if (sortedFrames.length < 2) return;
@@ -739,7 +741,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleDelete, duplicateObjects, editingId, selectedId, selectedIds, objects, setSelected, activeTool, lineDrawing, finalizeLineDrawing, freehandDrawing, selectedStampType, setSelectedStampType, undo, redo, followingUserId, stopFollowing]);
+  }, [handleDelete, duplicateObjects, editingId, selectedId, selectedIds, objects, setSelected, activeTool, lineDrawing, finalizeLineDrawing, freehandDrawing, selectedStampType, setSelectedStampType, undo, redo, followingUserId, stopFollowing, aiEnabled]);
 
   const handleSelectionRect = useCallback(
     (rect: { x: number; y: number; width: number; height: number } | null) => { setSelectionRect(rect); },
@@ -971,13 +973,14 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         onColorChange={handleColorChange}
         onDelete={handleDelete}
         currentBoardId={roomId}
-        onAIToggle={() => setAiOpen((v) => !v)}
-        aiOpen={aiOpen}
+        onAIToggle={aiEnabled ? () => setAiOpen((v) => !v) : undefined}
+        aiOpen={aiEnabled && aiOpen}
         selectedStampType={selectedStampType}
         onStampTypeChange={setSelectedStampType}
       />
 
-      {/* AI Command Bar */}
+      {/* AI Command Bar (only when the server advertises AI support) */}
+      {aiEnabled && (
       <AICommandBar
         isOpen={aiOpen}
         onClose={() => setAiOpen(false)}
@@ -992,6 +995,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
           canvasRef.current?.panToObjects(bounds);
         }}
       />
+      )}
 
       {/* Shortcut hint toast */}
       <ShortcutHint visible={shortcutHint.visible} />

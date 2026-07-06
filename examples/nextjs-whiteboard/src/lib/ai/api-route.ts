@@ -1,3 +1,6 @@
+// Parked: former app/api/ai route handler. Route handlers can't ship in a
+// static export; this returns as a server-side /api/ai when the standalone
+// server grows AI support (capability flag `ai` in /api/config).
 import Anthropic from "@anthropic-ai/sdk";
 import { LivelyClient, type Room, type LiveObject, type LiveMap } from "@waits/lively-client";
 import WebSocket from "ws";
