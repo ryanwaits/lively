@@ -35,12 +35,20 @@ export class BoardsIndex {
   async list(): Promise<Board[]> {
     const records = await this.loadRecords();
     const boards = await Promise.all(
-      records.map(async (record) => ({
-        ...record,
-        object_count: await this.objectCount(record.id),
+      records.map(async (record, index) => ({
+        board: { ...record, object_count: await this.objectCount(record.id) },
+        index,
       }))
     );
-    return boards.sort((a, b) => b.created_at.localeCompare(a.created_at));
+    // Newest first; the index file is append-ordered, so fall back to
+    // insertion order when timestamps collide within the same millisecond.
+    return boards
+      .sort(
+        (a, b) =>
+          b.board.created_at.localeCompare(a.board.created_at) ||
+          b.index - a.index
+      )
+      .map((entry) => entry.board);
   }
 
   async create(name: string, createdBy: string | null): Promise<Board> {
