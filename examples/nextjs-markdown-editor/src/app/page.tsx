@@ -16,7 +16,10 @@ import { ConnectionBadge, CollabPills } from "@waits/lively-ui";
 import { MarkdownEditor } from "./editor";
 
 const serverUrl =
-  process.env.NEXT_PUBLIC_LIVELY_HOST || "http://localhost:2003";
+  process.env.NEXT_PUBLIC_LIVELY_HOST ||
+  (typeof window !== "undefined" && process.env.NODE_ENV === "production"
+    ? window.location.origin
+    : "http://localhost:2003");
 const client = new LivelyClient({ serverUrl, reconnect: true });
 
 export default function EditorPage() {

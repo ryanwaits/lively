@@ -33,7 +33,10 @@ import type { PresenceUser } from "@waits/lively-types";
 
 // ── Lively client singleton ─────────────────────────────
 const serverUrl =
-  process.env.NEXT_PUBLIC_LIVELY_HOST || "http://localhost:2001";
+  process.env.NEXT_PUBLIC_LIVELY_HOST ||
+  (typeof window !== "undefined" && process.env.NODE_ENV === "production"
+    ? window.location.origin
+    : "http://localhost:2001");
 const client = new LivelyClient({ serverUrl, reconnect: true });
 
 // ── Types ───────────────────────────────────────────────────

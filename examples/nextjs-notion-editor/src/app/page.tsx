@@ -20,7 +20,10 @@ import {
 import { NotionEditor } from "./editor";
 
 const serverUrl =
-  process.env.NEXT_PUBLIC_LIVELY_HOST || "http://localhost:2004";
+  process.env.NEXT_PUBLIC_LIVELY_HOST ||
+  (typeof window !== "undefined" && process.env.NODE_ENV === "production"
+    ? window.location.origin
+    : "http://localhost:2004");
 const client = new LivelyClient({ serverUrl, reconnect: true });
 
 export default function NotionPage() {
