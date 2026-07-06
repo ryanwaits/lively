@@ -4,6 +4,9 @@ import path from "path";
 const yjsPath = path.resolve(process.cwd(), "node_modules/yjs");
 
 const nextConfig: NextConfig = {
+  output: "export",
+  basePath: "/notes",
+  images: { unoptimized: true },
   turbopack: {
     resolveAlias: {
       yjs: "./node_modules/yjs",

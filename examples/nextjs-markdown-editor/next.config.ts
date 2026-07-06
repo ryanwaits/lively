@@ -8,6 +8,9 @@ import path from "path";
 const yjsPath = path.resolve(process.cwd(), "node_modules/yjs");
 
 const nextConfig: NextConfig = {
+  output: "export",
+  basePath: "/markdown",
+  images: { unoptimized: true },
   turbopack: {
     resolveAlias: {
       // Turbopack needs a relative path (no absolute paths)
