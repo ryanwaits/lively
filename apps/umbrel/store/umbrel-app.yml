@@ -17,7 +17,7 @@ website: https://github.com/ryanwaits/lively
 dependencies: []
 repo: https://github.com/ryanwaits/lively
 support: https://github.com/ryanwaits/lively/issues
-port: 8080
+port: 8401
 gallery: []
 path: ""
 defaultUsername: ""
