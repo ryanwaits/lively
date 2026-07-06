@@ -99,6 +99,74 @@ function Toolbar() {
 - **Follow Mode** — Figma-style "follow user" with viewport sync
 - **Suspense** — `useStorageSuspense` and SSR-safe `ClientSideSuspense`
 
+## Self-hosting & collaboration
+
+Lively is designed to be **self-hosted** — you run the server on your own
+hardware (a home server, a VPS, or an [Umbrel](https://umbrel.com) device) and
+your collaboration data never leaves it. No SaaS account, no subscription, no
+third party. It's an open-source, self-hosted alternative to tools like
+Liveblocks or a private Figma-lite for you and the people you trust.
+
+### How real-time collaboration works
+
+Lively is a **server-authoritative hub**, not peer-to-peer. The server holds the
+live room (the CRDT document + presence) and relays cursors, edits, and ops to
+every connected client, then persists to disk. The important consequence:
+
+> **Collaborators don't need to be on the same network as each other — they each
+> just need a path to the server.** The server is the hub.
+
+The connection is always `browser ⇄ server (HTTP + WebSocket)`. Whatever carries
+that first hop is transparent to Lively, which is what makes the access model
+flexible.
+
+### Access paths
+
+| Path | What it gives you | Exposure |
+|------|-------------------|----------|
+| **Same LAN** | Everyone on the home/office network reaches the server directly | Nothing leaves your network |
+| **[Tailscale](https://tailscale.com)** | Collaborators join over a private WireGuard mesh from anywhere | No public ports opened — the recommended remote path |
+| **Tor** | Umbrel exposes each app as a hidden service out of the box | Works anywhere via Tor Browser; too slow for live cursors |
+| **Cloudflare Tunnel / reverse proxy** | Public URL | DIY; only with your own auth in front |
+
+### The v1 auth model (and its honest boundary)
+
+On Umbrel, Lively rides the platform's built-in auth: every request is gated by
+your Umbrel login, and browsers authorize the same-origin WebSocket via that
+session cookie. This is secure and zero-config, but it has a deliberate v1
+boundary worth stating plainly:
+
+> **v1 collaboration is among people who share access to the host.** On a
+> single-account platform like Umbrel, that means everyone collaborating logs in
+> with the same account. Great for a **household or a small trusted team**; not
+> yet a way to invite an outside guest without handing over the whole server.
+
+Participants pick a display name when they join, but there is no per-user
+identity separation underneath in v1.
+
+### The vision: invite guests securely (v1.1 and beyond)
+
+The goal is to let others join a specific room **securely, without giving up the
+host password** — the Liveblocks/Figma "share this board" experience, on your
+own hardware. The building blocks are already in place:
+
+- **v1.1 — scoped room tokens.** A `TokenAuthHandler` (against the existing
+  [`AuthHandler`](packages/server/src/types.ts) interface) issues short-lived,
+  per-room tokens. Combined with whitelisting *only* the WebSocket room paths at
+  the proxy (`PROXY_AUTH_WHITELIST: "/rooms/*"` on Umbrel), an invited client
+  can join a single board over its own token while the rest of the host stays
+  fully locked behind platform auth. This path is verified end-to-end against
+  Umbrel's real `app_proxy`.
+- **Beyond — real identities & sharing.** Per-user accounts, named participants
+  with durable identity, per-board roles (viewer/editor), and shareable invite
+  links with expiry — turning "people who share my server" into "people I
+  invited to this board."
+
+The end state: a private, self-hosted realtime layer where your data lives on
+your hardware, trusted people collaborate on your LAN or over Tailscale with
+zero exposure, and you can hand a guest a scoped link to one board without ever
+sharing your credentials.
+
 ## Examples
 
 | Example | Description |
