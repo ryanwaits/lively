@@ -10,9 +10,9 @@
     "start": "next start"
   },
   "dependencies": {
-    "@waits/lively-client": "^0.0.1",
-    "@waits/lively-react": "^0.0.1",
-    "@waits/lively-ui": "^0.0.1",
+    "@waits/lively-client": "^0.1.0",
+    "@waits/lively-react": "^0.1.0",
+    "@waits/lively-ui": "^0.1.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
@@ -22,7 +22,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@waits/lively-server": "^0.0.1",
+    "@waits/lively-server": "^0.1.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

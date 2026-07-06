@@ -1,6 +1,6 @@
 {
   "name": "@waits/lively-server",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "description": "Real-time collaboration server — WebSocket rooms, presence, and cursor relay",
   "main": "./dist/index.cjs",
@@ -23,8 +23,8 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/lively-storage": "^0.0.1",
-    "@waits/lively-types": "^0.0.1",
+    "@waits/lively-storage": "^0.1.0",
+    "@waits/lively-types": "^0.1.0",
     "ws": "^8.19.0",
     "yjs": "^13.6.29"
   },

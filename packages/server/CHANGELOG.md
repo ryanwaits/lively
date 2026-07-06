@@ -1,0 +1,16 @@
+# @waits/lively-server
+
+## 0.1.0
+
+### Minor Changes
+
+- Static file serving via the `staticDir` option — resolves like a Next static
+  export (`/foo` → `foo`, `foo.html`, `foo/index.html`), guards against path
+  traversal, and serves `/_next/static` assets with immutable caching.
+- `onRequest` hook for custom HTTP routes, checked after the health endpoint
+  and before static files.
+- Unified file-based `RoomPersistence` covering both storage flavors:
+  StorageDocument JSON snapshots (`rooms/<id>.json`) and binary Yjs updates
+  (`rooms/<id>.yjs`), with flavor-aware `list`/`delete`/`exists`.
+- `PersistenceBinding` — wires a `RoomPersistence` into server hooks with
+  per-room debounced writes and an explicit `flush()` for shutdown.

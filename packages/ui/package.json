@@ -1,6 +1,6 @@
 {
   "name": "@waits/lively-ui",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "description": "UI components for Lively real-time collaboration",
   "main": "./dist/index.cjs",
@@ -23,8 +23,8 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/lively-react": "^0.0.1",
-    "@waits/lively-types": "^0.0.1"
+    "@waits/lively-react": "^0.1.0",
+    "@waits/lively-types": "^0.1.0"
   },
   "peerDependencies": {
     "react": ">=18",
