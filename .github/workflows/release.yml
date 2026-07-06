@@ -31,6 +31,30 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
 
+      # Native amd64 boot test before anything is published (bun/SWC ship
+      # AVX2 binaries, so amd64 can't be emulation-tested on ARM hosts —
+      # this runner is the native check)
+      - name: Build amd64 for smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: lively:ci-smoke
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Boot smoke test (amd64)
+        run: |
+          docker run -d --name smoke -p 8080:8080 lively:ci-smoke
+          sleep 5
+          for p in /health / /board/ /notes/ /markdown/ /todo/ /api/config; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8080$p")
+            echo "$p -> $code"
+            [ "$code" = "200" ] || { docker logs smoke; exit 1; }
+          done
+          docker rm -f smoke
+
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -38,6 +62,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
 
       # Umbrel pins images as tag@sha256:<manifest-list digest> — grab it here
       - name: Print manifest-list digest
