@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lively — Realtime Collaboration</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%233b82f6'/%3E%3C/svg%3E" />
+  <style>
+    :root {
+      --body: #ffffff;
+      --panel: #f8f8f8;
+      --border: #e5e5e5;
+      --border-hover: #d4d4d4;
+      --text: #1c1c1c;
+      --muted: #737373;
+      --primary: #3b82f6;
+      --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--body);
+      color: var(--text);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    ::selection { background: var(--primary); color: #fff; }
+    a { text-decoration: none; color: inherit; }
+
+    nav {
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-inner {
+      max-width: 72rem; margin: 0 auto; padding: 0 1.5rem;
+      height: 4rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { display: flex; align-items: center; gap: 0.5rem; }
+    .logo { width: 1rem; height: 1rem; background: var(--primary); }
+    .brand span { font-weight: 700; letter-spacing: -0.025em; font-size: 1.125rem; }
+    .nav-tag {
+      font-family: var(--font-mono); font-size: 0.625rem;
+      text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted);
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      position: relative; overflow: hidden;
+    }
+    .grid-bg {
+      position: absolute; inset: 0; opacity: 0.4; pointer-events: none;
+      background-size: 60px 60px;
+      background-image:
+        linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px);
+      -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    }
+    .hero {
+      max-width: 72rem; margin: 0 auto; padding: 4rem 1.5rem 3.5rem;
+      position: relative; z-index: 1;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      border: 1px solid var(--border); background: rgba(248,248,248,0.5);
+      padding: 0.25rem 0.75rem; margin-bottom: 2rem;
+    }
+    .badge .dot {
+      width: 0.375rem; height: 0.375rem; border-radius: 9999px;
+      background: var(--primary); animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .badge span {
+      font-family: var(--font-mono); font-size: 0.625rem;
+      text-transform: uppercase; letter-spacing: 0.2em; color: var(--muted);
+    }
+    h1 {
+      font-weight: 700; letter-spacing: -0.04em; line-height: 0.95;
+      font-size: clamp(2.5rem, 7vw, 4.5rem); margin-bottom: 1.25rem;
+    }
+    h1 .dim { color: var(--muted); }
+    .sub {
+      color: var(--muted); font-size: 1.125rem; max-width: 34rem; line-height: 1.6;
+    }
+
+    main { max-width: 72rem; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+    .section-label {
+      font-family: var(--font-mono); font-size: 0.625rem; text-transform: uppercase;
+      letter-spacing: 0.2em; color: var(--muted); margin-bottom: 1.25rem;
+    }
+    .cards {
+      display: grid; gap: 1px; background: var(--border);
+      border: 1px solid var(--border);
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--body); padding: 2rem;
+      display: flex; flex-direction: column; gap: 0.75rem;
+      transition: background 0.2s ease;
+    }
+    .card:hover { background: var(--panel); }
+    .card.hero-card { grid-column: 1 / -1; padding: 2.5rem 2rem; }
+    .card h2 {
+      font-size: 1.25rem; font-weight: 700; letter-spacing: -0.025em;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .hero-card h2 { font-size: 1.6rem; }
+    .card .icon { flex: none; width: 0.75rem; height: 0.75rem; border: 1px solid var(--text); }
+    .card.hero-card .icon { background: var(--primary); border-color: var(--primary); }
+    .card p { color: var(--muted); line-height: 1.55; font-size: 0.9375rem; max-width: 40rem; }
+    .card .open {
+      margin-top: auto; padding-top: 0.5rem;
+      font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.15em; color: var(--text);
+    }
+    .card:hover .open { color: var(--primary); }
+
+    footer {
+      border-top: 1px solid var(--border);
+    }
+    .footer-inner {
+      max-width: 72rem; margin: 0 auto; padding: 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      font-family: var(--font-mono); font-size: 0.6875rem;
+      text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
+    }
+    .footer-inner a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <div class="brand">
+        <div class="logo"></div>
+        <span>LIVELY</span>
+      </div>
+      <div class="nav-tag">Self-hosted</div>
+    </div>
+  </nav>
+
+  <header>
+    <div class="grid-bg"></div>
+    <div class="hero">
+      <div class="badge">
+        <span class="dot"></span>
+        <span>All data stays on this device</span>
+      </div>
+      <h1>
+        COLLABORATE
+        <br /><span class="dim">IN REALTIME</span>
+        <br />ON YOUR HARDWARE.
+      </h1>
+      <p class="sub">
+        Live cursors, presence, undo/redo, and conflict-free editing —
+        no accounts, no cloud. Pick a space and share the link with
+        anyone on your network.
+      </p>
+    </div>
+  </header>
+
+  <main>
+    <div class="section-label">Apps</div>
+    <div class="cards">
+      <a class="card hero-card" href="/board/">
+        <h2><span class="icon"></span>Whiteboard</h2>
+        <p>
+          An infinite canvas for thinking together — sticky notes, shapes,
+          freehand drawing, connectors, frames, and live cursors. Create as
+          many boards as you like.
+        </p>
+        <span class="open">Open Whiteboard →</span>
+      </a>
+      <a class="card" href="/notes/">
+        <h2><span class="icon"></span>Notes</h2>
+        <p>Notion-style block editor with tasks, tables, code blocks, and shared editing.</p>
+        <span class="open">Open Notes →</span>
+      </a>
+      <a class="card" href="/markdown/">
+        <h2><span class="icon"></span>Markdown</h2>
+        <p>Collaborative markdown editor with syntax highlighting and multiplayer cursors.</p>
+        <span class="open">Open Markdown →</span>
+      </a>
+      <a class="card" href="/todo/">
+        <h2><span class="icon"></span>Todo</h2>
+        <p>A shared task list with realtime checkboxes for the whole household.</p>
+        <span class="open">Open Todo →</span>
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>Powered by Lively — open-source realtime collaboration</span>
+      <a href="https://github.com/ryanwaits/lively" target="_blank" rel="noreferrer">GitHub ↗</a>
+    </div>
+  </footer>
+</body>
+</html>
