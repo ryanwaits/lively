@@ -18,6 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://lively.waits.dev"),
   title: "Lively - Real-time Collaboration SDK",
   description:
     "Add real-time collaboration, presence, and state sync to your application in minutes.",
