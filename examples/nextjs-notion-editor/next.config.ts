@@ -5,7 +5,8 @@ const yjsPath = path.resolve(process.cwd(), "node_modules/yjs");
 
 const nextConfig: NextConfig = {
   output: "export",
-  basePath: "/notes",
+  // Umbrel serves this app under /notes; Vercel serves it at the subdomain root.
+  basePath: process.env.UMBREL_BUILD ? "/notes" : "",
   images: { unoptimized: true },
   turbopack: {
     resolveAlias: {

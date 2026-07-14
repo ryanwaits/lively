@@ -14,7 +14,9 @@ COPY . .
 RUN bun install --frozen-lockfile
 RUN bun run build:packages
 
-# Static exports (basePath baked into each app's next.config.ts)
+# Static exports (UMBREL_BUILD bakes each app's /board, /notes, etc. basePath
+# into the export; without it the same configs build root-served for Vercel)
+ENV UMBREL_BUILD=1
 RUN cd examples/nextjs-whiteboard && bunx next build && \
     cd ../nextjs-notion-editor && bunx next build && \
     cd ../nextjs-markdown-editor && bunx next build && \
