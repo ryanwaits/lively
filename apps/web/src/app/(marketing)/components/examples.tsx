@@ -38,9 +38,9 @@ const EXAMPLES = [
     ),
   },
   {
-    title: "IDE",
-    description: "Collaborative code editing with syntax awareness.",
-    href: "https://ide.waits.dev",
+    title: "Markdown",
+    description: "Collaborative markdown editing with syntax awareness.",
+    href: "https://markdown.waits.dev",
     animation: (
       <svg width="100%" height="100%" viewBox="0 0 200 120" fill="none">
         {/* Line numbers */}
