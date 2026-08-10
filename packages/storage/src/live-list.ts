@@ -157,6 +157,14 @@ export class LiveList<T = unknown> extends AbstractCrdt {
     return this._immutableCache;
   }
 
+  _forEachChild(cb: (key: string, child: AbstractCrdt) => void): void {
+    for (const entry of this._items) {
+      if (entry.value instanceof AbstractCrdt) {
+        cb(entry.position, entry.value as AbstractCrdt);
+      }
+    }
+  }
+
   _serialize(): SerializedCrdt {
     const items = this._items.map((entry) => ({
       position: entry.position,

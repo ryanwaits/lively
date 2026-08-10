@@ -235,21 +235,9 @@ export class StorageDocument implements StorageDocumentHost {
   ): void {
     const key = path.join("\0");
     map.set(key, node);
-
-    if (node instanceof LiveObject) {
-      const obj = node.toObject();
-      for (const [k, value] of Object.entries(obj)) {
-        if (value instanceof AbstractCrdt) {
-          this._collectNodes(value, [...path, k], map);
-        }
-      }
-    } else if (node instanceof LiveMap) {
-      node.forEach((value: unknown, k: string) => {
-        if (value instanceof AbstractCrdt) {
-          this._collectNodes(value as AbstractCrdt, [...path, k], map);
-        }
-      });
-    }
+    node._forEachChild((k, child) => {
+      this._collectNodes(child, [...path, k], map);
+    });
   }
 
   private _nodePathKey(
@@ -281,32 +269,12 @@ export class StorageDocument implements StorageDocumentHost {
       doc._notifyDeepSubscribers(this);
     };
 
-    // Recurse into children
-    if (node instanceof LiveObject) {
-      const obj = node.toObject();
-      for (const [key, value] of Object.entries(obj)) {
-        if (value instanceof AbstractCrdt) {
-          value._parent = node;
-          this._attachTree(value, [...path, key]);
-        }
-      }
-    } else if (node instanceof LiveMap) {
-      node.forEach((value: unknown, key: string) => {
-        if (value instanceof AbstractCrdt) {
-          (value as AbstractCrdt)._parent = node;
-          this._attachTree(value as AbstractCrdt, [...path, key]);
-        }
-      });
-    } else if (node instanceof LiveList) {
-      node.forEach((value: unknown, _index: number) => {
-        if (value instanceof AbstractCrdt) {
-          // For LiveList, the position is the path segment
-          // We can't easily get position from index, so skip deep path for now
-          (value as AbstractCrdt)._parent = node;
-          (value as AbstractCrdt)._doc = this;
-        }
-      });
-    }
+    // Recurse into children (LiveList children are addressed by their
+    // fractional-index position, matching _resolveTarget's _getByPosition)
+    node._forEachChild((key, child) => {
+      child._parent = node;
+      this._attachTree(child, [...path, key]);
+    });
   }
 
   private _resolveTarget(op: StorageOp): AbstractCrdt | null {

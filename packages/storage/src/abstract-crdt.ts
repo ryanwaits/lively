@@ -33,9 +33,17 @@ export abstract class AbstractCrdt {
     }
   }
 
+  /** Iterate direct child CRDTs with the path segment that addresses each one. */
+  _forEachChild(_cb: (key: string, child: AbstractCrdt) => void): void {}
+
   _attach(doc: StorageDocumentHost, path: string[], parent: AbstractCrdt | null): void {
     this._doc = doc;
     this._path = path;
     this._parent = parent;
+    // Re-attach the whole subtree so descendant paths stay addressable
+    // (constructor-assigned paths are relative to a detached parent)
+    this._forEachChild((key, child) => {
+      child._attach(doc, [...path, key], this);
+    });
   }
 }

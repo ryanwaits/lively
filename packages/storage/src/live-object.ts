@@ -101,6 +101,12 @@ export class LiveObject<
     return this._immutableCache;
   }
 
+  _forEachChild(cb: (key: string, child: AbstractCrdt) => void): void {
+    for (const [key, entry] of this._fields) {
+      if (entry.value instanceof AbstractCrdt) cb(key, entry.value);
+    }
+  }
+
   _serialize(): SerializedCrdt {
     const data: Record<string, SerializedCrdt> = {};
     for (const [key, entry] of this._fields) {

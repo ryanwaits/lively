@@ -168,6 +168,14 @@ export class LiveMap<V = unknown> extends AbstractCrdt {
     return this._immutableCache;
   }
 
+  _forEachChild(cb: (key: string, child: AbstractCrdt) => void): void {
+    for (const [key, entry] of this._entries) {
+      if (!entry.deleted && entry.value instanceof AbstractCrdt) {
+        cb(key, entry.value as AbstractCrdt);
+      }
+    }
+  }
+
   _serialize(): SerializedCrdt {
     const entries: Record<string, SerializedCrdt> = {};
     for (const [key, entry] of this._entries) {
