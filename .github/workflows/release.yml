@@ -55,6 +55,30 @@ jobs:
           done
           docker rm -f smoke
 
+      # umbrelOS's minimum amd64 CPU spec has no AVX2, so the shipped bun must
+      # be the baseline build. Boot the extracted server under a Nehalem CPU
+      # model (SSE4.2, no AVX/AVX2) — TCG raises SIGILL on any AVX2 instruction.
+      - name: No-AVX2 runtime check (amd64)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq qemu-user
+          docker create --name ext lively:ci-smoke
+          docker cp ext:/usr/local/bin/bun ./bun-amd64
+          docker cp ext:/app/server.js ./server.js
+          docker cp ext:/app/static ./static
+          docker rm ext
+          qemu-x86_64 -cpu Nehalem ./bun-amd64 --version
+          mkdir -p /tmp/noavx2-data
+          PORT=8124 DATA_DIR=/tmp/noavx2-data STATIC_DIR=./static \
+            qemu-x86_64 -cpu Nehalem ./bun-amd64 run server.js &
+          for i in $(seq 1 30); do
+            sleep 2
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8124/health || true)
+            [ "$code" = "200" ] && break
+          done
+          echo "/health -> $code"
+          kill %1 || true
+          [ "$code" = "200" ]
+
       - uses: docker/build-push-action@v6
         with:
           context: .

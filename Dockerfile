@@ -6,7 +6,7 @@
 # Runs on the build host's native arch; all outputs (bundled server.js,
 # static exports) are arch-independent JS, so cross-builds never execute
 # anything under emulation (bun crashes under qemu/Rosetta).
-FROM --platform=$BUILDPLATFORM oven/bun:1 AS build
+FROM --platform=$BUILDPLATFORM oven/bun:1.3.14 AS build
 WORKDIR /repo
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -31,8 +31,30 @@ RUN bun build apps/umbrel/server.ts --target=bun --outfile=/out/server.js && \
     cp -r examples/nextjs-markdown-editor/out /out/static/markdown && \
     cp -r examples/nextjs-todo/out /out/static/todo
 
+# ---- bun runtime binary ----
+# Fetch the target-arch bun release on the build host (download only — never
+# executed here). amd64 gets the baseline build: bun's default x64 build
+# targets Haswell (AVX2), which umbrelOS's minimum CPU spec doesn't include.
+FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS bunfetch
+ARG TARGETARCH
+ARG BUN_VERSION=1.3.14
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      curl unzip ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN set -eux; \
+    case "$TARGETARCH" in \
+      amd64) flavor=linux-x64-baseline ;; \
+      arm64) flavor=linux-aarch64 ;; \
+      *) echo "unsupported arch: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    base="https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}"; \
+    curl -fsSLO "$base/bun-${flavor}.zip"; \
+    curl -fsSLO "$base/SHASUMS256.txt"; \
+    grep " bun-${flavor}.zip\$" SHASUMS256.txt | sha256sum -c -; \
+    unzip -q "bun-${flavor}.zip"; \
+    mv "bun-${flavor}/bun" /bun-target
+
 # ---- runtime ----
-FROM oven/bun:1-slim
+FROM oven/bun:1.3.14-slim
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=8080 \
@@ -40,6 +62,7 @@ ENV NODE_ENV=production \
     STATIC_DIR=/app/static
 
 # COPY-only below — no RUN, so cross-arch builds never execute emulated code
+COPY --from=bunfetch /bun-target /usr/local/bin/bun
 COPY --from=build --chown=bun:bun /out/server.js ./server.js
 COPY --from=build --chown=bun:bun /out/static ./static
 COPY --from=build --chown=bun:bun /out/data /data
