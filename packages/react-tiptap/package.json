@@ -1,6 +1,6 @@
 {
   "name": "@waits/lively-react-tiptap",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Tiptap integration for Lively collaborative editing",
   "main": "./dist/index.cjs",
@@ -18,13 +18,15 @@
       }
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/lively-yjs": "^0.1.0",
-    "@waits/lively-react": "^0.1.0",
+    "@waits/lively-yjs": "^0.1.1",
+    "@waits/lively-react": "^0.1.1",
     "@tiptap/suggestion": "^3.20.0",
     "y-prosemirror": "^1.3.7"
   },
@@ -48,18 +50,42 @@
     "yjs": "^13"
   },
   "peerDependenciesMeta": {
-    "@tiptap/extension-task-list": { "optional": true },
-    "@tiptap/extension-task-item": { "optional": true },
-    "@tiptap/extension-table": { "optional": true },
-    "@tiptap/extension-table-row": { "optional": true },
-    "@tiptap/extension-table-cell": { "optional": true },
-    "@tiptap/extension-table-header": { "optional": true },
-    "@tiptap/extension-image": { "optional": true },
-    "@tiptap/extension-underline": { "optional": true },
-    "@tiptap/extension-highlight": { "optional": true },
-    "@tiptap/extension-link": { "optional": true },
-    "@tiptap/extension-code-block-lowlight": { "optional": true },
-    "lowlight": { "optional": true }
+    "@tiptap/extension-task-list": {
+      "optional": true
+    },
+    "@tiptap/extension-task-item": {
+      "optional": true
+    },
+    "@tiptap/extension-table": {
+      "optional": true
+    },
+    "@tiptap/extension-table-row": {
+      "optional": true
+    },
+    "@tiptap/extension-table-cell": {
+      "optional": true
+    },
+    "@tiptap/extension-table-header": {
+      "optional": true
+    },
+    "@tiptap/extension-image": {
+      "optional": true
+    },
+    "@tiptap/extension-underline": {
+      "optional": true
+    },
+    "@tiptap/extension-highlight": {
+      "optional": true
+    },
+    "@tiptap/extension-link": {
+      "optional": true
+    },
+    "@tiptap/extension-code-block-lowlight": {
+      "optional": true
+    },
+    "lowlight": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@tiptap/react": "^3.20.0",

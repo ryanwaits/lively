@@ -1,6 +1,6 @@
 {
   "name": "@waits/lively-yjs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Yjs provider for Lively — Y.Doc ↔ Room bridge",
   "main": "./dist/index.cjs",
@@ -18,7 +18,9 @@
       }
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
@@ -27,7 +29,7 @@
   },
   "peerDependencies": {
     "yjs": "^13",
-    "@waits/lively-client": "^0.1.0"
+    "@waits/lively-client": "^0.1.1"
   },
   "devDependencies": {
     "@waits/lively-client": "workspace:*",

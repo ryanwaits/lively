@@ -1,6 +1,6 @@
 {
   "name": "@waits/lively-storage",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "CRDT storage types for Lively real-time collaboration",
   "main": "./dist/index.cjs",
@@ -18,12 +18,14 @@
       }
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/lively-types": "^0.1.0"
+    "@waits/lively-types": "^0.1.1"
   },
   "devDependencies": {
     "typescript": "^5"

@@ -1,5 +1,12 @@
 # @waits/lively-cli
 
+## 0.1.1
+
+### Patch Changes
+
+- @waits/lively-server@0.1.1
+- @waits/lively-types@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes
