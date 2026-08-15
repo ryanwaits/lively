@@ -1,6 +1,6 @@
 {
   "name": "@waits/lively-yjs",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "Yjs provider for Lively — Y.Doc ↔ Room bridge",
   "main": "./dist/index.cjs",
@@ -29,7 +29,7 @@
   },
   "peerDependencies": {
     "yjs": "^13",
-    "@waits/lively-client": "^0.1.1"
+    "@waits/lively-client": "^0.1.2"
   },
   "devDependencies": {
     "@waits/lively-client": "workspace:*",

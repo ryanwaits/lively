@@ -1,5 +1,12 @@
 # @waits/lively-ui
 
+## 0.1.2
+
+### Patch Changes
+
+- @waits/lively-react@0.1.2
+- @waits/lively-types@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes

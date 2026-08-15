@@ -1,6 +1,6 @@
 {
   "name": "@waits/lively-client",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "Client SDK for Lively real-time collaboration",
   "main": "./dist/index.cjs",
@@ -26,8 +26,8 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/lively-storage": "^0.1.1",
-    "@waits/lively-types": "^0.1.1"
+    "@waits/lively-storage": "^0.1.2",
+    "@waits/lively-types": "^0.1.2"
   },
   "peerDependencies": {
     "ws": "^8"

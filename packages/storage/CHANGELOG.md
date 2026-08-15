@@ -1,5 +1,11 @@
 # @waits/lively-storage
 
+## 0.1.2
+
+### Patch Changes
+
+- @waits/lively-types@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes
