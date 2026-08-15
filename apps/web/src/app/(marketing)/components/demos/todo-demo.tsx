@@ -68,7 +68,7 @@ function toggle(todos: Todo[], id: string): Todo[] {
   return todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t));
 }
 
-const CODE = `const todos = useStorage(root => root.get("todos"));
+const CODE = `const todos = useStorage((root) => root.get("todos"));
 
 const addTodo = useMutation(({ storage }, text) => {
   storage.root.get("todos").push({ text, done: false });
@@ -89,7 +89,7 @@ export function TodoDemo() {
       code={
         <>
           <span className="text-code-keyword">const</span> todos ={" "}
-          <span className="text-code-func">useStorage</span>(root ={">"} root.
+          <span className="text-code-func">useStorage</span>((root) ={">"} root.
           <span className="text-code-func">get</span>(
           <span className="text-code-string">&quot;todos&quot;</span>));{"\n\n"}
           <span className="text-code-keyword">const</span> addTodo ={" "}

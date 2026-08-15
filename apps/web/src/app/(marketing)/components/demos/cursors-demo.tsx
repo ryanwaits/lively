@@ -31,9 +31,9 @@ const script: Script<CursorState> = {
 const CODE = `const others = useOthers();
 const [, update] = useMyPresence();
 
-onPointerMove={(e) =>
-  update({ cursor: { x: e.clientX,
-                     y: e.clientY } })}`;
+function onPointerMove(e) {
+  update({ cursor: { x: e.clientX, y: e.clientY } });
+}`;
 
 export function CursorsDemo() {
   const { ref, state, status, replay, reduced } = useTimeline(script);
@@ -53,12 +53,12 @@ export function CursorsDemo() {
           <span className="text-code-func">useOthers</span>();{"\n"}
           <span className="text-code-keyword">const</span> [, update] ={" "}
           <span className="text-code-func">useMyPresence</span>();{"\n\n"}
-          onPointerMove={"{"}(e) ={">"}
-          {"\n"}
-          {"  "}
+          <span className="text-code-keyword">function</span>{" "}
+          <span className="text-code-func">onPointerMove</span>(e) {"{"}
+          {"\n  "}
           <span className="text-code-func">update</span>({"{"} cursor: {"{"} x:
-          e.clientX,{"\n"}
-          {"                     "}y: e.clientY {"}"} {"}"}){"}"}
+          e.clientX, y: e.clientY {"}"} {"}"});{"\n"}
+          {"}"}
         </>
       }
     >
