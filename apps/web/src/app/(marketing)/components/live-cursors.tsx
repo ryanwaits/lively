@@ -31,9 +31,47 @@ function CursorCanvas({ children }: { children: ReactNode }) {
   );
 }
 
+const IDENTITY_KEY = "lively:landing-identity";
+
+/**
+ * A stable identity for the lifetime of this tab.
+ *
+ * Deliberately sessionStorage, not localStorage. The server does not dedupe by
+ * userId — two sockets sharing an id show up as two separate people — and
+ * `CursorOverlay` hides any cursor whose userId matches your own. Sharing one
+ * id across tabs would therefore count your other tabs in the presence total
+ * while never drawing their cursors: present in the number, invisible on the
+ * page. Per-tab ids keep the count and the cursors telling the same story,
+ * and surviving reloads is what stops stale identities piling up in the room.
+ */
+function readIdentity(): { userId: string; displayName: string } {
+  if (typeof window === "undefined") {
+    // SSR pass. No socket is opened here; the client replaces this on mount.
+    return { userId: "", displayName: "" };
+  }
+  try {
+    const stored = window.sessionStorage.getItem(IDENTITY_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.userId && parsed?.displayName) return parsed;
+    }
+  } catch {
+    // Private browsing and some embedded webviews throw on access.
+  }
+  const identity = {
+    userId: crypto.randomUUID().slice(0, 8),
+    displayName: generateFunName(),
+  };
+  try {
+    window.sessionStorage.setItem(IDENTITY_KEY, JSON.stringify(identity));
+  } catch {
+    // Non-persistent identity is still a working identity.
+  }
+  return identity;
+}
+
 export function LiveCursors({ children }: { children: ReactNode }) {
-  const [userId] = useState(() => crypto.randomUUID().slice(0, 8));
-  const [displayName] = useState(() => generateFunName());
+  const [{ userId, displayName }] = useState(readIdentity);
 
   return (
     <LivelyProvider client={client}>
