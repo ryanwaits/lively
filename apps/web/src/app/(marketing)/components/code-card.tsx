@@ -40,10 +40,8 @@ function PresenceChip() {
 const LINES: { text: string; cls?: string }[][] = [
   [
     { text: "import", cls: "text-tok-key" },
-    { text: " { RoomProvider, useOthers }" },
-  ],
-  [
-    { text: "  from" as string, cls: "text-tok-key" },
+    { text: " { RoomProvider, useOthers } " },
+    { text: "from", cls: "text-tok-key" },
     { text: " " },
     { text: '"@waits/lively-react"', cls: "text-tok-str" },
     { text: ";" },
@@ -66,14 +64,18 @@ const LINES: { text: string; cls?: string }[][] = [
   [
     { text: "<RoomProvider roomId=" },
     { text: '"board-1"', cls: "text-tok-str" },
+    { text: " initialStorage={{ shapes: [] }}>" },
   ],
-  [{ text: "  initialStorage={{ shapes: [] }}>" }],
   [{ text: "  <Canvas />" }],
   [{ text: "</RoomProvider>" }],
 ];
 
-/** The one line that types itself in, once, on first paint. */
-const TYPED_LINE_INDEX = 4;
+/**
+ * The one line that types itself in, once, on first paint.
+ * Index into LINES — keep it pointing at `const others = useOthers();`
+ * if lines are ever added or merged above it.
+ */
+const TYPED_LINE_INDEX = 3;
 
 export function CodeCard() {
   const typedFull = "  const others = useOthers();";
