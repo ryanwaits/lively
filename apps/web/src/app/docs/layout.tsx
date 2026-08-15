@@ -3,25 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { DOC_SECTIONS } from "./nav-config";
 
-const NAV = [
-  {
-    heading: "Getting Started",
-    links: [
-      { href: "/docs", label: "Overview" },
-      { href: "/docs/quick-start", label: "Quick Start" },
-    ],
-  },
-  {
-    heading: "Packages",
-    links: [
-      { href: "/docs/client", label: "Client" },
-      { href: "/docs/react", label: "React" },
-      { href: "/docs/server", label: "Server" },
-      { href: "/docs/storage", label: "Storage" },
-    ],
-  },
-];
+const NAV = DOC_SECTIONS;
 
 function Sidebar({ pathname, onNav }: { pathname: string; onNav?: () => void }) {
   return (
@@ -68,7 +52,7 @@ function Sidebar({ pathname, onNav }: { pathname: string; onNav?: () => void }) 
       </nav>
 
       <div className="px-6 py-4 border-t border-border">
-        <span className="font-mono text-[10px] text-muted">v0.0.1</span>
+        <span className="font-mono text-[10px] text-muted">v0.1.1</span>
       </div>
     </div>
   );
