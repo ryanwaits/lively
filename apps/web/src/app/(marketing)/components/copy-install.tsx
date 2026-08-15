@@ -1,32 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const COMMAND = "bun add @waits/lively-react";
 
+/**
+ * Install strip. Silent success: the label swaps for a moment and swaps back.
+ * No toast — the user can see the thing they asked for happened.
+ */
 export function CopyInstall() {
   const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(COMMAND);
+    } catch {
+      // Clipboard can be blocked by permissions; the command is on screen
+      // and selectable either way, so there is nothing useful to say.
+      return;
+    }
+    setCopied(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopied(false), 1500);
+  }
 
   return (
-    <button
-      onClick={() => {
-        navigator.clipboard.writeText(COMMAND);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      }}
-      className="bg-accent text-accent-fg font-mono font-bold text-sm px-6 py-4 hover:bg-text transition-colors flex items-center justify-center gap-2"
-    >
-      <span>{COMMAND}</span>
-      {copied ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-      )}
-    </button>
+    <div className="flex max-w-sm items-stretch overflow-hidden rounded-[6px] border border-border-hover bg-body">
+      <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap px-3 py-2.5 font-mono text-[13px] text-text">
+        {COMMAND}
+      </code>
+      <button
+        type="button"
+        onClick={copy}
+        className="grid shrink-0 place-items-center whitespace-nowrap border-l border-border px-3 font-mono text-[11px] uppercase tracking-wider text-muted transition-colors duration-150 hover:bg-panel hover:text-text"
+      >
+        {copied ? "Copied" : "Copy"}
+      </button>
+      <span aria-live="polite" className="sr-only">
+        {copied ? "Install command copied to clipboard" : ""}
+      </span>
+    </div>
   );
 }
