@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Manrope, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -7,7 +7,7 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-sans",
 });
 
-const manrope = Manrope({
+const inter = Inter({
   subsets: ["latin"],
   variable: "--font-body",
 });
@@ -17,23 +17,24 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
+const TITLE = "Lively — real-time collaboration for React";
+const DESCRIPTION =
+  "Presence, live cursors and CRDT storage over one WebSocket. 41 React hooks, and a server you run yourself. MIT licensed.";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://lively.waits.dev"),
-  title: "Lively - Real-time Collaboration SDK",
-  description:
-    "Add real-time collaboration, presence, and state sync to your application in minutes.",
+  title: TITLE,
+  description: DESCRIPTION,
   openGraph: {
-    title: "Lively - Real-time Collaboration SDK",
-    description:
-      "Add real-time collaboration, presence, and state sync to your application in minutes.",
+    title: TITLE,
+    description: DESCRIPTION,
     type: "website",
     images: [{ url: "/og.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lively - Real-time Collaboration SDK",
-    description:
-      "Add real-time collaboration, presence, and state sync to your application in minutes.",
+    title: TITLE,
+    description: DESCRIPTION,
     images: ["/og.png"],
   },
 };
@@ -46,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${manrope.variable} ${jetbrainsMono.variable}`}
+      className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-body selection:bg-accent selection:text-accent-fg">
         {children}
