@@ -16,6 +16,14 @@ export function Nav() {
   const { open, setOpen } = useCommandPalette();
   const [scrolled, setScrolled] = useState(false);
   const pillRef = useRef<HTMLButtonElement>(null);
+  // Render the modifier the visitor actually presses. Showing a Mac glyph to
+  // a Windows user is wrong even on the platforms where U+2318 renders.
+  const [modKey, setModKey] = useState("Ctrl");
+
+  useEffect(() => {
+    const isApple = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+    if (isApple) setModKey("\u2318");
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -46,7 +54,7 @@ export function Nav() {
             ref={pillRef}
             type="button"
             onClick={() => setOpen(true)}
-            aria-label="Search documentation (Command K)"
+            aria-label={`Search documentation (${modKey === "Ctrl" ? "Control" : "Command"} K)`}
             className="group mx-auto hidden h-9 w-full max-w-[300px] items-center gap-2.5 rounded-full border border-border bg-panel px-3 text-muted transition-colors duration-200 hover:border-border-hover sm:flex"
           >
             <svg
@@ -67,7 +75,7 @@ export function Nav() {
             </span>
             <span className="flex shrink-0 gap-1">
               <kbd className="rounded border border-border-hover bg-body px-1 py-px font-kbd text-[11px] leading-tight">
-                ⌘
+                {modKey}
               </kbd>
               <kbd className="rounded border border-border-hover bg-body px-1 py-px font-kbd text-[11px] leading-tight">
                 K
