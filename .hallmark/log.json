@@ -1,0 +1,13 @@
+[
+  {
+    "date": "2026-08-15",
+    "macrostructure": "Component Playground",
+    "theme": "Cobalt",
+    "genre": "modern-minimal",
+    "nav": "N13 inline cmdk pill",
+    "footer": "Ft4 dense typographic",
+    "enrichment": "none (typography + scripted demos)",
+    "theme_axes": "cool-light / grotesk-sans / cool-blue",
+    "brief": "Lively marketing site — self-hostable React multiplayer library, DX-first"
+  }
+]

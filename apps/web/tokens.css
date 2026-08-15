@@ -1,8 +1,11 @@
-/* Hallmark · genre: modern-minimal · macrostructure: Component Playground · theme: Cobalt · nav: N13 · footer: Ft4 */
+/* Lively design tokens — Hallmark theme: Cobalt
+ *
+ * Portable token set for the Lively marketing site and docs. Generated
+ * from apps/web/src/app/globals.css; that file is the source of truth.
+ * Compatibility aliases for the outgoing design are deliberately excluded.
+ */
 
-@import "tailwindcss";
-
-@theme {
+:root {
   /* ── Paper and ink ────────────────────────────────────────────────
      Cool engineered near-white, never #fff. Ink is cool charcoal,
      never #000. Token names are inherited from the previous palette
@@ -65,17 +68,6 @@
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  /* ── COMPATIBILITY — retired with the components that use them ─────
-     These keep the outgoing marketing components rendering while the
-     new page is built section by section. Every one of them is deleted
-     in the cleanup pass; do not reach for them in new code. */
-  --color-primary: oklch(58% 0.2 256);
-  --color-primary-fg: oklch(98.5% 0.004 250);
-  --color-cursor-1: oklch(58% 0.2 256);
-  --color-cursor-2: oklch(62% 0.19 15);
-}
-
-:root {
   /* ── Space — 4pt scale, named by role ─────────────────────────────── */
   --space-3xs: 0.125rem;
   --space-2xs: 0.25rem;
@@ -103,91 +95,4 @@
   --z-tooltip: 600;
 
   --rule-hair: 1px;
-}
-
-html,
-body {
-  overflow-x: clip;
-}
-
-/* Smooth scroll is a motion preference, not a default. */
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
-  }
-}
-
-body {
-  background-color: var(--color-body);
-  color: var(--color-text-2);
-  -webkit-font-smoothing: antialiased;
-}
-
-::selection {
-  background: var(--color-accent);
-  color: var(--color-accent-fg);
-}
-
-:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* ── COMPATIBILITY — retired with the components that use them ────────
-   Everything below belongs to the outgoing design. It is deleted in the
-   cleanup pass once the last component referencing it is gone. */
-
-.bg-grid {
-  background-size: 60px 60px;
-  background-image:
-    linear-gradient(to right, oklch(24% 0.02 258 / 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(24% 0.02 258 / 0.04) 1px, transparent 1px);
-  mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
-}
-
-@keyframes cursorMove {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(100px, 50px); }
-  50% { transform: translate(20px, 150px); }
-  75% { transform: translate(-50px, 80px); }
-  100% { transform: translate(0, 0); }
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-@keyframes checkOff {
-  0%, 40% { opacity: 1; }
-  50%, 90% { opacity: 0.4; }
-  100% { opacity: 1; }
-}
-
-@keyframes flowPulse {
-  0% { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: -14; }
-}
-
-@keyframes blockSlide {
-  0% { transform: translateX(-8px); opacity: 0; }
-  15%, 100% { transform: translateX(0); opacity: 1; }
-}
-
-@media (max-width: 768px) {
-  .hero-headline {
-    font-size: 48px !important;
-  }
 }
