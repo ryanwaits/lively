@@ -68,15 +68,6 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-
-  /* ── COMPATIBILITY — retired with the components that use them ─────
-     These keep the outgoing marketing components rendering while the
-     new page is built section by section. Every one of them is deleted
-     in the cleanup pass; do not reach for them in new code. */
-  --color-primary: oklch(53% 0.19 256);
-  --color-primary-fg: oklch(98.5% 0.004 250);
-  --color-cursor-1: oklch(53% 0.19 256);
-  --color-cursor-2: oklch(54% 0.19 20);
 }
 
 :root {
@@ -151,52 +142,5 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-}
-
-/* Keyframes are name-scoped, not cascade-scoped — they stay unlayered. */
-@keyframes cursorMove {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(100px, 50px); }
-  50% { transform: translate(20px, 150px); }
-  75% { transform: translate(-50px, 80px); }
-  100% { transform: translate(0, 0); }
-}
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-@keyframes checkOff {
-  0%, 40% { opacity: 1; }
-  50%, 90% { opacity: 0.4; }
-  100% { opacity: 1; }
-}
-@keyframes flowPulse {
-  0% { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: -14; }
-}
-@keyframes blockSlide {
-  0% { transform: translateX(-8px); opacity: 0; }
-  15%, 100% { transform: translateX(0); opacity: 1; }
-}
-
-@layer components {
-  /* ── COMPATIBILITY — retired with the components that use them ────────
-     Everything below belongs to the outgoing design. It is deleted in the
-     cleanup pass once the last component referencing it is gone. */
-
-  .bg-grid {
-    background-size: 60px 60px;
-    background-image:
-      linear-gradient(to right, oklch(24% 0.02 258 / 0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, oklch(24% 0.02 258 / 0.04) 1px, transparent 1px);
-    mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
-  }
-
-  @media (max-width: 768px) {
-    .hero-headline {
-      font-size: 48px !important;
-    }
   }
 }

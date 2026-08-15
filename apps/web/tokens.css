@@ -2,7 +2,6 @@
  *
  * Portable token set for the Lively marketing site and docs. Generated
  * from apps/web/src/app/globals.css; that file is the source of truth.
- * Compatibility aliases for the outgoing design are deliberately excluded.
  */
 
 :root {
@@ -17,14 +16,14 @@
   --color-border-hover: oklch(83% 0.008 252);
   --color-text: oklch(24% 0.02 258);
   --color-text-2: oklch(34% 0.018 257);
-  --color-muted: oklch(56% 0.014 256);
+  --color-muted: oklch(54% 0.014 256);
 
   /* ── The one signal ───────────────────────────────────────────────
      Electric cobalt, spent on under 5% of any viewport: the primary
      button, focus rings, active nav, link hover, status chips. */
-  --color-accent: oklch(58% 0.2 256);
+  --color-accent: oklch(53% 0.19 256);
   --color-accent-fg: oklch(98.5% 0.004 250);
-  --color-focus: oklch(58% 0.2 256);
+  --color-focus: oklch(53% 0.19 256);
 
   /* ── The dark beat ────────────────────────────────────────────────
      One graphite band per page, plus the hero code card. */
@@ -38,7 +37,7 @@
   --color-code-keyword: oklch(48% 0.19 256);
   --color-code-string: oklch(46% 0.11 175);
   --color-code-func: oklch(38% 0.13 285);
-  --color-code-comment: oklch(56% 0.012 256);
+  --color-code-comment: oklch(54% 0.012 256);
 
   /* ── Syntax, graphite surfaces (marketing code card) ─────────────── */
   --color-tok-key: oklch(72% 0.15 256);
@@ -48,15 +47,19 @@
   /* ── Peer identity ────────────────────────────────────────────────
      Scripted demo peers and cursor labels. Distinct hues, matched
      lightness so no peer reads as more important than another. */
-  --color-peer-1: oklch(58% 0.2 256);
-  --color-peer-2: oklch(62% 0.19 15);
-  --color-peer-3: oklch(60% 0.17 155);
+  --color-peer-1: oklch(53% 0.19 256);
+  --color-peer-2: oklch(54% 0.19 20);
+  --color-peer-3: oklch(50% 0.13 158);
 
   /* ── Type ─────────────────────────────────────────────────────────
      Space Grotesk display, Inter body, JetBrains Mono code + labels. */
   --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* JetBrains Mono's latin subset has no U+2318 (⌘) and renders tofu.
+     Keyboard hints borrow the platform's symbol coverage instead. */
+  --font-kbd: ui-monospace, "SF Mono", "Segoe UI Symbol",
+    "Noto Sans Symbols 2", monospace;
 
   /* ── Radii — drawn with a ruler, never pills ─────────────────────── */
   --radius-control: 6px;
