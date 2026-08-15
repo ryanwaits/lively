@@ -213,6 +213,23 @@ describe("Room", () => {
     expect(MockWebSocket.instances[0].url).toStartWith("ws://");
   });
 
+  it("trims whitespace around serverUrl", () => {
+    const room = new Room({
+      serverUrl: "  https://lively-ws.example.dev\n",
+      roomId: "r1",
+      userId: "u1",
+      displayName: "U",
+      WebSocket: MockWebSocket as any,
+      reconnect: false,
+    });
+    room.connect();
+    const { url } = MockWebSocket.instances[0];
+    expect(url).toBe(
+      "wss://lively-ws.example.dev/rooms/r1?userId=u1&displayName=U"
+    );
+    expect(url).not.toMatch(/\s/);
+  });
+
   // --- Task #4: Clear cursorTimer on disconnect ---
 
   it("disconnect clears pending cursor timer", async () => {

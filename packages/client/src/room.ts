@@ -80,7 +80,9 @@ export class Room {
     this.cursorThrottleMs = Math.max(1, config.cursorThrottleMs ?? 50);
     this.initialStorageData = config.initialStorage;
 
-    const wsScheme = config.serverUrl.replace(/^http/, "ws");
+    // Trim first: env vars routinely carry a trailing newline, and an
+    // untrimmed value lands whitespace in the middle of the WebSocket URL.
+    const wsScheme = config.serverUrl.trim().replace(/^http/, "ws");
     const base = wsScheme.replace(/\/$/, "");
     let url = `${base}/rooms/${config.roomId}?userId=${encodeURIComponent(config.userId)}&displayName=${encodeURIComponent(config.displayName)}`;
     if (config.token) {
