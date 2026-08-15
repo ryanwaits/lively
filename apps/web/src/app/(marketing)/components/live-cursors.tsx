@@ -5,8 +5,18 @@ import { LivelyClient } from "@waits/lively-client";
 import { LivelyProvider, RoomProvider } from "@waits/lively-react";
 import { CursorOverlay, useCursorTracking, generateFunName } from "@waits/lively-ui";
 
-const serverUrl =
-  process.env.NEXT_PUBLIC_LIVELY_URL || "http://localhost:1999";
+// Production must be explicit. The old silent localhost fallback shipped
+// `ws://localhost:1999` to every visitor for as long as the variable was
+// unset, which is exactly the kind of failure nobody sees.
+const configuredUrl = process.env.NEXT_PUBLIC_LIVELY_URL?.trim();
+
+if (!configuredUrl && process.env.NODE_ENV === "production") {
+  console.error(
+    "[lively] NEXT_PUBLIC_LIVELY_URL is not set. Live cursors are disabled."
+  );
+}
+
+const serverUrl = configuredUrl || "http://localhost:1999";
 
 const client = new LivelyClient({ serverUrl });
 
