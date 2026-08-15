@@ -24,8 +24,12 @@ function PresenceChip() {
     );
   }
 
+  // `useOthers()` returns everyone the room still tracks, including peers the
+  // server has already marked `offline` — those linger in the presence list
+  // for minutes after a tab closes. Counting them makes the chip claim an
+  // audience that isn't there, which is the one thing it must never do.
   // `others` excludes you, so the room holds one more than it reports.
-  const peers = others.length + 1;
+  const peers = others.filter((u) => u.onlineStatus !== "offline").length + 1;
   return (
     <span className="flex items-center gap-1.5 whitespace-nowrap font-mono text-[11px] text-tok-key">
       <span
