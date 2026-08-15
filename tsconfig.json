@@ -11,5 +11,5 @@
     "isolatedModules": true,
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", "packages", "examples"]
+  "exclude": ["node_modules", "packages", "examples", "apps"]
 }
