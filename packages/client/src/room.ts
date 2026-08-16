@@ -2,6 +2,7 @@ import type {
   ConnectionStatus,
   PresenceUser,
   CursorData,
+  CursorSpace,
   HighlightRect,
   SerializedCrdt,
   StorageOp,
@@ -57,7 +58,7 @@ export class Room {
   // Throttle state for updateCursor
   private cursorThrottleMs: number;
   private cursorTimer: ReturnType<typeof setTimeout> | null = null;
-  private pendingCursor: { x: number; y: number; viewportPos?: { x: number; y: number }; viewportScale?: number; cursorType?: "default" | "text" | "pointer"; highlightRect?: HighlightRect } | null = null;
+  private pendingCursor: { x: number; y: number; viewportPos?: { x: number; y: number }; viewportScale?: number; cursorType?: "default" | "text" | "pointer"; highlightRect?: HighlightRect; space?: CursorSpace } | null = null;
   private lastCursorSend = 0;
 
   // Storage state
@@ -297,20 +298,20 @@ export class Room {
     }
   }
 
-  updateCursor(x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer", highlightRect?: HighlightRect): void {
+  updateCursor(x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer", highlightRect?: HighlightRect, space?: CursorSpace): void {
     const now = Date.now();
     const elapsed = now - this.lastCursorSend;
 
     if (elapsed >= this.cursorThrottleMs) {
-      this.sendCursor(x, y, viewportPos, viewportScale, cursorType, highlightRect);
+      this.sendCursor(x, y, viewportPos, viewportScale, cursorType, highlightRect, space);
     } else {
-      this.pendingCursor = { x, y, viewportPos, viewportScale, cursorType, highlightRect };
+      this.pendingCursor = { x, y, viewportPos, viewportScale, cursorType, highlightRect, space };
       if (!this.cursorTimer) {
         this.cursorTimer = setTimeout(() => {
           this.cursorTimer = null;
           if (this.pendingCursor) {
-            const { x: px, y: py, viewportPos: pvp, viewportScale: pvs, cursorType: pct, highlightRect: phr } = this.pendingCursor;
-            this.sendCursor(px, py, pvp, pvs, pct, phr);
+            const { x: px, y: py, viewportPos: pvp, viewportScale: pvs, cursorType: pct, highlightRect: phr, space: psp } = this.pendingCursor;
+            this.sendCursor(px, py, pvp, pvs, pct, phr, psp);
             this.pendingCursor = null;
           }
         }, this.cursorThrottleMs - elapsed);
@@ -397,13 +398,15 @@ export class Room {
 
   // --- Internal ---
 
-  private sendCursor(x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer", highlightRect?: HighlightRect): void {
+  private sendCursor(x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer", highlightRect?: HighlightRect, space?: CursorSpace): void {
     this.lastCursorSend = Date.now();
     const msg: Record<string, unknown> = { type: "cursor:update", x, y };
     if (viewportPos) msg.viewportPos = viewportPos;
     if (viewportScale !== undefined) msg.viewportScale = viewportScale;
     if (cursorType) msg.cursorType = cursorType;
     if (highlightRect) msg.highlightRect = highlightRect;
+    // Omitted when "pixel" so the wire stays byte-identical for existing clients.
+    if (space && space !== "pixel") msg.space = space;
     this.send(msg as { type: string; [key: string]: unknown });
   }
 

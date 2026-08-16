@@ -675,6 +675,8 @@ export class LivelyServer {
         typeof hr.top === "number" && isFinite(hr.top) &&
         typeof hr.width === "number" && isFinite(hr.width) && hr.width >= 0 &&
         typeof hr.height === "number" && isFinite(hr.height) && hr.height >= 0;
+      const sp = parsed.space as string | undefined;
+      const isValidSp = sp === "pixel" || sp === "fraction";
       const cursor: CursorData = {
         userId: conn.user.userId,
         displayName: conn.user.displayName,
@@ -686,6 +688,7 @@ export class LivelyServer {
         ...(isValidVs && { viewportScale: vs }),
         ...(isValidCt && { cursorType: ct }),
         ...(isValidHr && { highlightRect: hr }),
+        ...(isValidSp && { space: sp }),
       };
       room.broadcast(
         JSON.stringify({ type: "cursor:update", cursor }),
