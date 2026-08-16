@@ -12,7 +12,7 @@
     },
     "apps/umbrel": {
       "name": "@apps/umbrel",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "dependencies": {
         "@waits/lively-server": "workspace:*",
         "@waits/lively-types": "workspace:*",
@@ -25,7 +25,7 @@
     },
     "apps/web": {
       "name": "@apps/web",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@waits/lively-client": "^0.1.0",
         "@waits/lively-react": "^0.1.0",
@@ -49,7 +49,7 @@
     },
     "examples/nextjs-collab-editor": {
       "name": "@examples/nextjs-collab-editor",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "dependencies": {
         "@tiptap/extension-placeholder": "^3.20.0",
         "@tiptap/pm": "^3.20.0",
@@ -79,7 +79,7 @@
     },
     "examples/nextjs-markdown-editor": {
       "name": "@examples/nextjs-markdown-editor",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "dependencies": {
         "@codemirror/autocomplete": "^6.20.0",
         "@codemirror/commands": "^6.10.2",
@@ -115,7 +115,7 @@
     },
     "examples/nextjs-notion-editor": {
       "name": "@examples/nextjs-notion-editor",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "dependencies": {
         "@tiptap/extension-code-block-lowlight": "^3.20.0",
         "@tiptap/extension-highlight": "^3.20.0",
@@ -155,7 +155,7 @@
     },
     "examples/nextjs-todo": {
       "name": "@examples/nextjs-todo",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "dependencies": {
         "@waits/lively-client": "workspace:*",
         "@waits/lively-react": "workspace:*",
@@ -178,7 +178,7 @@
     },
     "examples/nextjs-whiteboard": {
       "name": "@examples/nextjs-whiteboard",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "dependencies": {
         "@anthropic-ai/sdk": "0.75.0",
         "@waits/lively-client": "workspace:*",
@@ -214,7 +214,7 @@
     },
     "examples/nextjs-workflows": {
       "name": "@examples/nextjs-workflows",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "dependencies": {
         "@waits/lively-client": "workspace:*",
         "@waits/lively-react": "workspace:*",
@@ -239,7 +239,7 @@
     },
     "packages/cli": {
       "name": "@waits/lively-cli",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "bin": {
         "lively": "./dist/index.js",
       },
@@ -256,10 +256,10 @@
     },
     "packages/client": {
       "name": "@waits/lively-client",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
-        "@waits/lively-storage": "^0.1.1",
-        "@waits/lively-types": "^0.1.1",
+        "@waits/lively-storage": "^0.2.0",
+        "@waits/lively-types": "^0.2.0",
       },
       "devDependencies": {
         "@types/ws": "^8.5.14",
@@ -276,7 +276,7 @@
     },
     "packages/react": {
       "name": "@waits/lively-react",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
         "@waits/lively-client": "^0.1.1",
         "@waits/lively-types": "^0.1.1",
@@ -299,7 +299,7 @@
     },
     "packages/react-codemirror": {
       "name": "@waits/lively-react-codemirror",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
         "@codemirror/lang-markdown": "^6.5.0",
         "@codemirror/language-data": "^6.5.2",
@@ -328,7 +328,7 @@
     },
     "packages/react-tiptap": {
       "name": "@waits/lively-react-tiptap",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
         "@tiptap/suggestion": "^3.20.0",
         "@waits/lively-react": "workspace:*",
@@ -382,10 +382,10 @@
     },
     "packages/server": {
       "name": "@waits/lively-server",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
-        "@waits/lively-storage": "^0.1.1",
-        "@waits/lively-types": "^0.1.1",
+        "@waits/lively-storage": "^0.2.0",
+        "@waits/lively-types": "^0.2.0",
         "ws": "^8.19.0",
         "yjs": "^13.6.29",
       },
@@ -396,9 +396,9 @@
     },
     "packages/storage": {
       "name": "@waits/lively-storage",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
-        "@waits/lively-types": "^0.1.1",
+        "@waits/lively-types": "^0.2.0",
       },
       "devDependencies": {
         "typescript": "^5",
@@ -406,14 +406,14 @@
     },
     "packages/types": {
       "name": "@waits/lively-types",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "devDependencies": {
         "typescript": "^5",
       },
     },
     "packages/ui": {
       "name": "@waits/lively-ui",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
         "@waits/lively-react": "^0.1.1",
         "@waits/lively-types": "^0.1.1",
@@ -434,7 +434,7 @@
     },
     "packages/yjs": {
       "name": "@waits/lively-yjs",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
         "y-protocols": "^1.0.7",
       },
@@ -445,7 +445,7 @@
         "yjs": "^13.6.29",
       },
       "peerDependencies": {
-        "@waits/lively-client": "^0.1.1",
+        "@waits/lively-client": "^0.2.0",
         "yjs": "^13",
       },
     },

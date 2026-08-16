@@ -1,5 +1,20 @@
 # @examples/nextjs-markdown-editor
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @waits/lively-types@0.2.0
+  - @waits/lively-client@0.2.0
+  - @waits/lively-react@0.2.0
+  - @waits/lively-ui@0.2.0
+  - @waits/lively-server@0.2.0
+  - @waits/lively-storage@0.2.0
+  - @waits/lively-yjs@0.2.0
+  - @waits/lively-react-codemirror@0.2.0
+
 ## 0.1.2
 
 ### Patch Changes

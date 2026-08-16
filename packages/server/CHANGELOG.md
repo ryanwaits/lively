@@ -1,5 +1,14 @@
 # @waits/lively-server
 
+## 0.2.0
+
+### Patch Changes
+
+- Remove stale connections instead of only marking them offline. A client that disappeared without a clean WebSocket close previously stayed in the room's presence list forever, and because those entries counted toward the room size the room could never be cleaned up either. Heartbeat timings and the offline-removal grace window are now configurable through `roomConfig`.
+- Updated dependencies
+  - @waits/lively-types@0.2.0
+  - @waits/lively-storage@0.2.0
+
 ## 0.1.2
 
 ### Patch Changes
