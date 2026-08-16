@@ -32,11 +32,19 @@ const client = new LivelyClient({ serverUrl });
 const CURSOR_INACTIVITY_MS = 30_000;
 
 function CursorCanvas({ children }: { children: ReactNode }) {
-  const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>();
+  // The page is a fluid document, so pixel offsets would land on different
+  // content at a different window width. Fractions track the layout instead.
+  const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>({
+    coordinates: "fraction",
+  });
 
   return (
     <div ref={ref} onMouseMove={onMouseMove} className="relative">
-      <CursorOverlay mode="name" inactivityTimeout={CURSOR_INACTIVITY_MS} />
+      <CursorOverlay
+        mode="name"
+        inactivityTimeout={CURSOR_INACTIVITY_MS}
+        containerRef={ref}
+      />
       {children}
     </div>
   );

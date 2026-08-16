@@ -173,7 +173,9 @@ function OnlineIndicator() {
 
 function NotionLayout() {
   const wordCount = useWordCount();
-  const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>();
+  const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>({
+    coordinates: "fraction",
+  });
 
   return (
     <div
@@ -181,7 +183,7 @@ function NotionLayout() {
       onMouseMove={onMouseMove}
       className="relative min-h-screen flex flex-col"
     >
-      <CursorOverlay mode="cursor" inactivityTimeout={5000} />
+      <CursorOverlay mode="cursor" inactivityTimeout={5000} containerRef={ref} />
 
       {/* Top nav */}
       <header className="sticky top-0 z-20 border-b border-[#e8e7e4] bg-white/80 backdrop-blur-sm px-4 py-2 flex items-center justify-between">

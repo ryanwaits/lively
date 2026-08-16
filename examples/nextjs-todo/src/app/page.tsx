@@ -163,7 +163,9 @@ function TodoContent() {
   const [filter, setFilter] = useLiveState<FilterMode>("filter", "all");
   const { undo, redo, canUndo, canRedo } = useHistory();
 
-  const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>();
+  const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>({
+    coordinates: "fraction",
+  });
 
   // Presence hooks
   const updatePresence = useUpdateMyPresence();
@@ -354,7 +356,7 @@ function TodoContent() {
   return (
     <div ref={ref} className="relative min-h-screen w-full" onMouseMove={onMouseMove}>
       {/* Live cursors */}
-      <CursorOverlay />
+      <CursorOverlay containerRef={ref} />
 
       {/* Celebration banner */}
       {showCelebration && (
