@@ -80,7 +80,14 @@ describe("useUpdateCursor", () => {
     setup();
     const { result } = renderHook(() => useUpdateCursor(), { wrapper });
     result.current(50, 75);
-    expect(mockRoom.updateCursor).toHaveBeenCalledWith(50, 75, undefined, undefined, undefined, undefined);
+    expect(mockRoom.updateCursor).toHaveBeenCalledWith(50, 75, undefined, undefined, undefined, undefined, undefined);
+  });
+
+  it("forwards the coordinate space through to the room", () => {
+    setup();
+    const { result } = renderHook(() => useUpdateCursor(), { wrapper });
+    result.current(0.5, 0.25, undefined, undefined, undefined, undefined, "fraction");
+    expect(mockRoom.updateCursor).toHaveBeenCalledWith(0.5, 0.25, undefined, undefined, undefined, undefined, "fraction");
   });
 
   it("returns stable function reference", () => {

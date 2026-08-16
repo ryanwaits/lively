@@ -1,5 +1,5 @@
 import { useSyncExternalStore, useCallback, useRef } from "react";
-import type { CursorData, HighlightRect } from "@waits/lively-types";
+import type { CursorData, CursorSpace, HighlightRect } from "@waits/lively-types";
 import { useRoom } from "./room-context.js";
 
 const EMPTY_CURSORS: Map<string, CursorData> = new Map();
@@ -60,11 +60,11 @@ export function useCursors(): Map<string, CursorData> {
  * const updateCursor = useUpdateCursor();
  * <div onMouseMove={e => updateCursor(e.clientX, e.clientY)} />
  */
-export function useUpdateCursor(): (x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer", highlightRect?: HighlightRect) => void {
+export function useUpdateCursor(): (x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer", highlightRect?: HighlightRect, space?: CursorSpace) => void {
   const room = useRoom();
   return useCallback(
-    (x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer", highlightRect?: HighlightRect) =>
-      room.updateCursor(x, y, viewportPos, viewportScale, cursorType, highlightRect),
+    (x: number, y: number, viewportPos?: { x: number; y: number }, viewportScale?: number, cursorType?: "default" | "text" | "pointer", highlightRect?: HighlightRect, space?: CursorSpace) =>
+      room.updateCursor(x, y, viewportPos, viewportScale, cursorType, highlightRect, space),
     [room]
   );
 }
