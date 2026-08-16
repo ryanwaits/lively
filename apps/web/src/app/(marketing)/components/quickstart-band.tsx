@@ -6,7 +6,7 @@ export function QuickstartBand() {
   return (
     <section className="bg-graphite py-16 lg:py-20">
       <div className="mx-auto max-w-6xl px-6">
-        <h2 className="mb-2 font-sans text-[clamp(1.25rem,2.2vw+0.4rem,1.625rem)] font-semibold leading-tight tracking-[-0.025em] text-body">
+        <h2 className="mb-2 font-sans text-[clamp(1.25rem,2.2vw+0.4rem,1.625rem)] font-semibold leading-tight tracking-[-0.025em] text-on-dark">
           Run the server yourself.
         </h2>
         <p className="mb-8 max-w-[46ch] text-sm text-tok-mut">

@@ -73,7 +73,7 @@ export function GhostCursor({
           />
         </svg>
         <span
-          className={`mt-2 whitespace-nowrap rounded-[3px] px-1.5 py-0.5 font-mono text-[9px] font-medium text-accent-fg ${BG[peer.token]}`}
+          className={`mt-2 whitespace-nowrap rounded-[3px] px-1.5 py-0.5 font-mono text-[9px] font-medium text-peer-fg ${BG[peer.token]}`}
         >
           {peer.name}
         </span>
@@ -88,7 +88,7 @@ export function GhostAvatars({ peers }: { peers: Peer[] }) {
       {peers.map((peer, i) => (
         <span
           key={peer.name}
-          className={`grid h-6 w-6 place-items-center rounded-full border-2 border-panel font-mono text-[9px] font-medium text-accent-fg ${BG[peer.token]}`}
+          className={`grid h-6 w-6 place-items-center rounded-full border-2 border-panel font-mono text-[9px] font-medium text-peer-fg ${BG[peer.token]}`}
           style={{ marginLeft: i === 0 ? 0 : "-6px" }}
         >
           {peer.name.slice(0, 2).toUpperCase()}

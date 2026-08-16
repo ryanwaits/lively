@@ -112,7 +112,7 @@ export function Nav() {
             </Link>
             <Link
               href="/docs/quick-start"
-              className="whitespace-nowrap rounded-[6px] bg-accent px-3 py-[7px] text-[13px] font-medium text-accent-fg no-underline transition-colors hover:bg-code-keyword"
+              className="whitespace-nowrap rounded-[6px] bg-accent px-3 py-[7px] text-[13px] font-medium text-accent-fg no-underline transition-colors hover:bg-accent-hover"
             >
               Quick start
             </Link>
