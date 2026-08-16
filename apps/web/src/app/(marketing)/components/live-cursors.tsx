@@ -20,12 +20,23 @@ const serverUrl = configuredUrl || "http://localhost:1999";
 
 const client = new LivelyClient({ serverUrl });
 
+/**
+ * How long a peer's cursor stays on screen after they stop moving.
+ *
+ * The hero's status chip counts everyone connected, but a cursor only exists
+ * while its owner is moving a mouse. At the old five seconds the two told
+ * different stories — the chip would say "3 here now" while the page showed
+ * nothing, which reads as broken rather than quiet. Thirty seconds keeps a
+ * reader who moved recently on screen, so the count and the cursors agree.
+ */
+const CURSOR_INACTIVITY_MS = 30_000;
+
 function CursorCanvas({ children }: { children: ReactNode }) {
   const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>();
 
   return (
     <div ref={ref} onMouseMove={onMouseMove} className="relative">
-      <CursorOverlay mode="name" inactivityTimeout={5000} />
+      <CursorOverlay mode="name" inactivityTimeout={CURSOR_INACTIVITY_MS} />
       {children}
     </div>
   );
