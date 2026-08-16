@@ -3,6 +3,7 @@ export type {
   HighlightRect,
   PresenceUser,
   CursorData,
+  CursorSpace,
   ConnectionStatus,
   PresenceMessage,
   CursorUpdateMessage,

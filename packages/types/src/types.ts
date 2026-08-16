@@ -17,6 +17,20 @@ export interface PresenceUser {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * What `CursorData.x` / `y` are measured in.
+ *
+ * - `"pixel"` — offsets in px from the tracking container's top-left. Right
+ *   for a fixed coordinate space such as a canvas, where every peer means the
+ *   same point.
+ * - `"fraction"` — offsets as 0–1 of the container's width and height. Right
+ *   for a fluid document that reflows, where a pixel offset would land on
+ *   different content at a different viewport width.
+ *
+ * Absent means `"pixel"`, so older clients stay correct on the wire.
+ */
+export type CursorSpace = "pixel" | "fraction";
+
 export interface CursorData {
   userId: string;
   displayName: string;
@@ -28,6 +42,8 @@ export interface CursorData {
   viewportScale?: number;
   cursorType?: "default" | "text" | "pointer";
   highlightRect?: HighlightRect;
+  /** Coordinate space of `x`/`y`. Defaults to `"pixel"` when absent. */
+  space?: CursorSpace;
 }
 
 export type ConnectionStatus =
