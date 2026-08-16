@@ -1,6 +1,6 @@
 import { useRef, useCallback } from "react";
 import type { RefObject } from "react";
-import type { HighlightRect } from "@waits/lively-types";
+import type { CursorSpace, HighlightRect } from "@waits/lively-types";
 import { useUpdateCursor } from "@waits/lively-react";
 
 const INLINE_TAGS = new Set([
@@ -51,6 +51,19 @@ function detectCursorType(e: MouseEvent): "default" | "text" | "pointer" {
 export interface CursorTrackingOptions {
   /** Track cursor type changes and text highlights. Default: `false`. */
   trackCursorType?: boolean;
+  /**
+   * What coordinates to broadcast. Default: `"pixel"`.
+   *
+   * - `"pixel"` — offsets in px from the container. Correct for a fixed
+   *   coordinate space like a canvas, where every peer means the same point.
+   * - `"fraction"` — offsets as 0–1 of the container's size. Correct for a
+   *   fluid document, where the layout reflows and a pixel offset would land
+   *   on different content at a different viewport width.
+   *
+   * When using `"fraction"`, pass the same ref to `<CursorOverlay containerRef>`
+   * so the receiving side can convert back.
+   */
+  coordinates?: CursorSpace;
 }
 
 export function useCursorTracking<T extends HTMLElement>(
@@ -64,14 +77,28 @@ export function useCursorTracking<T extends HTMLElement>(
   const lastCursorType = useRef<"default" | "text" | "pointer">("default");
   const updateCursor = useUpdateCursor();
   const track = options?.trackCursorType ?? false;
+  const space: CursorSpace = options?.coordinates ?? "pixel";
 
   const onMouseMove = useCallback(
     (e: React.MouseEvent) => {
       if (!ref.current) return;
       const rect = ref.current.getBoundingClientRect();
 
+      const toX = (px: number) =>
+        space === "fraction" ? (rect.width ? px / rect.width : 0) : px;
+      const toY = (py: number) =>
+        space === "fraction" ? (rect.height ? py / rect.height : 0) : py;
+
       if (!track) {
-        updateCursor(e.clientX - rect.left, e.clientY - rect.top);
+        updateCursor(
+          toX(e.clientX - rect.left),
+          toY(e.clientY - rect.top),
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          space
+        );
         return;
       }
 
@@ -91,15 +118,15 @@ export function useCursorTracking<T extends HTMLElement>(
         }
         const targetRect = hlTarget.getBoundingClientRect();
         highlightRect = {
-          left: targetRect.left - rect.left,
-          top: targetRect.top - rect.top,
-          width: targetRect.width,
-          height: targetRect.height,
+          left: toX(targetRect.left - rect.left),
+          top: toY(targetRect.top - rect.top),
+          width: toX(targetRect.width),
+          height: toY(targetRect.height),
         };
       }
-      updateCursor(e.clientX - rect.left, e.clientY - rect.top, undefined, undefined, cursorType, highlightRect);
+      updateCursor(toX(e.clientX - rect.left), toY(e.clientY - rect.top), undefined, undefined, cursorType, highlightRect, space);
     },
-    [updateCursor, track]
+    [updateCursor, track, space]
   );
 
   return { ref, onMouseMove };

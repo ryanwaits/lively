@@ -1,4 +1,5 @@
 import { useState, useEffect, Fragment } from "react";
+import type { RefObject } from "react";
 import { useCursors, useOthers, useSelf } from "@waits/lively-react";
 import { Cursor } from "./cursor.js";
 
@@ -12,6 +13,14 @@ export interface CursorOverlayProps {
    * Undefined or 0 = no fade.
    */
   inactivityTimeout?: number;
+  /**
+   * The tracking container — the same ref `useCursorTracking` returns.
+   *
+   * Required only when peers broadcast `coordinates: "fraction"`, since those
+   * cursors carry 0–1 offsets that have to be scaled back up by the local
+   * container's size. Pixel cursors ignore it.
+   */
+  containerRef?: RefObject<HTMLElement | null>;
 }
 
 /**
@@ -34,10 +43,29 @@ export function CursorOverlay({
   className,
   mode,
   inactivityTimeout,
+  containerRef,
 }: CursorOverlayProps): JSX.Element {
   const cursors = useCursors();
   const self = useSelf();
   const others = useOthers();
+
+  // Container size, tracked so fraction cursors can be scaled back to pixels.
+  // Only observed when a containerRef is supplied.
+  const [size, setSize] = useState<{ width: number; height: number } | null>(
+    null
+  );
+  useEffect(() => {
+    const el = containerRef?.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      setSize({ width: rect.width, height: rect.height });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [containerRef]);
 
   // Force re-render every second to recheck inactivity timestamps
   const [, setTick] = useState(0);
@@ -60,6 +88,30 @@ export function CursorOverlay({
   return (
     <>
       {entries.map(([userId, cursor]) => {
+        // Fraction cursors carry 0-1 offsets; scale them by the local
+        // container so both sides agree on where the pointer is even when
+        // their viewports differ.
+        const scale = cursor.space === "fraction";
+        if (scale && !size && process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[lively] Received fraction cursors but <CursorOverlay> has no " +
+              "containerRef, so they cannot be positioned. Pass the same ref " +
+              "returned by useCursorTracking()."
+          );
+        }
+        const cx = scale && size ? cursor.x * size.width : cursor.x;
+        const cy = scale && size ? cursor.y * size.height : cursor.y;
+        const rect = cursor.highlightRect;
+        const highlight =
+          rect && scale && size
+            ? {
+                left: rect.left * size.width,
+                top: rect.top * size.height,
+                width: rect.width * size.width,
+                height: rect.height * size.height,
+              }
+            : rect;
+
         const isInactive =
           inactivityTimeout != null &&
           inactivityTimeout > 0 &&
@@ -67,15 +119,15 @@ export function CursorOverlay({
 
         return (
           <Fragment key={userId}>
-            {cursor.highlightRect && (
+            {highlight && (
               <div
                 style={{
                   position: "absolute",
                   left: 0,
                   top: 0,
-                  transform: `translate(${cursor.highlightRect.left}px, ${cursor.highlightRect.top}px)`,
-                  width: cursor.highlightRect.width,
-                  height: cursor.highlightRect.height,
+                  transform: `translate(${highlight.left}px, ${highlight.top}px)`,
+                  width: highlight.width,
+                  height: highlight.height,
                   backgroundColor: cursor.color,
                   opacity: isInactive ? 0 : 0.12,
                   transition: "opacity 300ms",
@@ -86,8 +138,8 @@ export function CursorOverlay({
               />
             )}
             <Cursor
-              x={cursor.x}
-              y={cursor.y}
+              x={cx}
+              y={cy}
               color={cursor.color}
               displayName={cursor.displayName}
               className={className}
