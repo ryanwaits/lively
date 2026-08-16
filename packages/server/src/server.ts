@@ -52,6 +52,9 @@ function toBase64(data: Uint8Array): string {
 
 const DEFAULT_PATH = "/rooms";
 const DEFAULT_CLEANUP_MS = 30_000;
+const DEFAULT_HEARTBEAT_TIMEOUT_MS = 45_000;
+const DEFAULT_HEARTBEAT_CHECK_INTERVAL_MS = 15_000;
+const DEFAULT_OFFLINE_REMOVAL_MS = 30_000;
 
 export class LivelyServer {
   private httpServer: http.Server;
@@ -80,8 +83,9 @@ export class LivelyServer {
   >();
 
   private heartbeatCheckTimer: ReturnType<typeof setInterval> | null = null;
-  private readonly heartbeatTimeoutMs = 45_000;
-  private readonly heartbeatCheckIntervalMs = 15_000;
+  private readonly heartbeatTimeoutMs: number;
+  private readonly heartbeatCheckIntervalMs: number;
+  private readonly offlineRemovalMs: number;
 
   // Map req → upgrade metadata (avoids `any` cast on req)
   private reqMetadata = new WeakMap<
@@ -101,6 +105,13 @@ export class LivelyServer {
     this.cleanupTimeoutMs =
       config.roomConfig?.cleanupTimeoutMs ?? DEFAULT_CLEANUP_MS;
     this.maxConnections = config.roomConfig?.maxConnections;
+    this.heartbeatTimeoutMs =
+      config.roomConfig?.heartbeatTimeoutMs ?? DEFAULT_HEARTBEAT_TIMEOUT_MS;
+    this.heartbeatCheckIntervalMs =
+      config.roomConfig?.heartbeatCheckIntervalMs ??
+      DEFAULT_HEARTBEAT_CHECK_INTERVAL_MS;
+    this.offlineRemovalMs =
+      config.roomConfig?.offlineRemovalMs ?? DEFAULT_OFFLINE_REMOVAL_MS;
     this.onMessage = config.onMessage;
     this.onJoin = config.onJoin;
     this.onLeave = config.onLeave;
@@ -383,6 +394,23 @@ export class LivelyServer {
     };
 
     const room = this.roomManager.getOrCreate(meta.roomId);
+
+    // A reconnect arrives as a brand-new connection id, so any entry this
+    // user left behind would sit alongside the new one for the whole grace
+    // window — the same person listed twice, once offline. Only `offline`
+    // entries are evicted, so a genuine multi-tab user is untouched.
+    for (const [staleId, stale] of room.connections) {
+      if (stale.onlineStatus === "offline" && stale.user.userId === userId) {
+        try {
+          stale.ws.terminate();
+        } catch {}
+        const removed = room.removeConnection(staleId);
+        if (removed && this.onLeave) {
+          Promise.resolve(this.onLeave(meta.roomId, removed)).catch(() => {});
+        }
+      }
+    }
+
     room.addConnection(connectionId, ws, user);
     this.wsMetadata.set(ws, { roomId: meta.roomId, connectionId });
 
@@ -760,24 +788,64 @@ export class LivelyServer {
     room.broadcast(room.getPresenceMessage());
   }
 
+  /**
+   * Sweeps connections that have stopped heartbeating.
+   *
+   * Two stages. A connection that misses `heartbeatTimeoutMs` is marked
+   * `offline` — useful signal, and it lets a peer on a flaky link show as
+   * dropped rather than vanishing. Once it has been offline for
+   * `offlineRemovalMs` it is removed outright.
+   *
+   * The removal stage is the important one: `handleClose` only runs on a
+   * graceful close, so without it a client that dies uncleanly (sleep,
+   * network drop, force-quit, a proxy dropping the socket) stays in the room
+   * forever. Because `room.size` counts those entries and cleanup only runs
+   * at zero, a single one used to pin the room in memory permanently.
+   */
   private startHeartbeatCheck(): void {
     this.heartbeatCheckTimer = setInterval(() => {
       const now = Date.now();
       for (const room of this.roomManager.all()) {
         let changed = false;
-        for (const [, conn] of room.connections) {
-          if (
-            conn.onlineStatus !== "offline" &&
-            now - conn.lastHeartbeat > this.heartbeatTimeoutMs
-          ) {
+
+        for (const [id, conn] of room.connections) {
+          const offline = conn.onlineStatus === "offline";
+
+          if (!offline && now - conn.lastHeartbeat > this.heartbeatTimeoutMs) {
             conn.onlineStatus = "offline";
             conn.user.onlineStatus = "offline";
+            conn.offlineSince = now;
             room["_presenceCache"] = null;
+            changed = true;
+            continue;
+          }
+
+          if (
+            offline &&
+            conn.offlineSince !== undefined &&
+            now - conn.offlineSince > this.offlineRemovalMs
+          ) {
+            // Terminating fires 'close' → handleClose, which is idempotent:
+            // removeConnection returns undefined the second time, so onLeave
+            // cannot fire twice.
+            try {
+              conn.ws.terminate();
+            } catch {}
+            const user = room.removeConnection(id);
+            if (user && this.onLeave) {
+              Promise.resolve(this.onLeave(room.id, user)).catch(() => {});
+            }
             changed = true;
           }
         }
+
         if (changed) {
           this.broadcastPresence(room);
+          // The sweep may have emptied the room; cleanup was previously only
+          // reachable from handleClose.
+          if (room.size === 0) {
+            this.roomManager.scheduleCleanup(room.id, this.cleanupTimeoutMs);
+          }
         }
       }
     }, this.heartbeatCheckIntervalMs);
