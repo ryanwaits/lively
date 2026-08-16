@@ -36,6 +36,19 @@ export interface AuthHandler {
 export interface RoomConfig {
   cleanupTimeoutMs?: number;
   maxConnections?: number;
+  /**
+   * How long a connection may go without a heartbeat before it is marked
+   * `offline`. Default: 45_000.
+   */
+  heartbeatTimeoutMs?: number;
+  /** How often to sweep for stale connections. Default: 15_000. */
+  heartbeatCheckIntervalMs?: number;
+  /**
+   * How long a connection stays in the room after being marked `offline`
+   * before it is removed entirely. The grace window lets a peer on a flaky
+   * link show as offline rather than vanishing outright. Default: 30_000.
+   */
+  offlineRemovalMs?: number;
 }
 
 export interface ServerConfig {
@@ -122,4 +135,9 @@ export interface Connection {
   onlineStatus: OnlineStatus;
   lastActiveAt: number;
   lastHeartbeat: number;
+  /**
+   * When this connection was marked `offline` by the heartbeat sweep.
+   * Used to decide when it has been gone long enough to remove.
+   */
+  offlineSince?: number;
 }
