@@ -21,6 +21,7 @@
      button, focus rings, active nav, link hover, status chips. */
   --color-accent: oklch(53% 0.19 256);
   --color-accent-fg: oklch(98.5% 0.004 250);
+  --color-accent-hover: oklch(46% 0.18 256);
   --color-focus: oklch(53% 0.19 256);
 
   /* ── The dark beat ────────────────────────────────────────────────
@@ -48,6 +49,10 @@
   --color-peer-1: oklch(53% 0.19 256);
   --color-peer-2: oklch(54% 0.19 20);
   --color-peer-3: oklch(50% 0.13 158);
+  /* Peer chips carry their own foreground. Tying them to --color-accent-fg
+     would flip them with the theme, but peer colours stay mid-lightness in
+     both, so the label that reads on them is the same either way. */
+  --color-peer-fg: oklch(98.5% 0.004 250);
 
   /* ── Type ─────────────────────────────────────────────────────────
      Space Grotesk display, Inter body, JetBrains Mono code + labels. */
@@ -98,6 +103,61 @@
   --z-tooltip: 600;
 
   --rule-hair: 1px;
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────────
+   Follows the visitor's system setting; there is no toggle, so someone on
+   macOS auto gets light by day and dark at night.
+
+   Only the token values change — every component keeps referencing the same
+   names, so no markup is theme-aware. Two things are deliberately not a
+   naive inversion:
+
+   1. Graphite goes *lighter* than the page ground rather than darker. It is
+      an elevated surface (the code card, the quickstart band), and on a dark
+      canvas elevation reads as lightness. Inverting it would sink those
+      surfaces into the background.
+   2. The accent lightens. Cobalt at 53% carries a light page but muddies
+      against a dark one, so it moves to 70% and its foreground flips dark. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --color-body: oklch(17% 0.014 260);
+    --color-panel: oklch(20.5% 0.014 260);
+    --color-surface: oklch(24% 0.015 260);
+    --color-border: oklch(29% 0.014 258);
+    --color-border-hover: oklch(38% 0.016 258);
+    --color-text: oklch(94% 0.008 250);
+    --color-text-2: oklch(84% 0.01 252);
+    --color-muted: oklch(66% 0.012 254);
+
+    --color-accent: oklch(70% 0.16 256);
+    --color-accent-fg: oklch(17% 0.014 260);
+    --color-accent-hover: oklch(78% 0.14 256);
+    --color-focus: oklch(70% 0.16 256);
+
+    /* Elevated, so lighter than the ground — see note above. */
+    --color-graphite: oklch(23% 0.016 260);
+    --color-graphite-2: oklch(31% 0.016 260);
+    --color-on-dark: oklch(93% 0.009 255);
+
+    --color-code-bg: oklch(21% 0.014 260);
+    --color-code-border: oklch(29% 0.014 258);
+    --color-code-keyword: oklch(76% 0.14 256);
+    --color-code-string: oklch(80% 0.1 175);
+    --color-code-func: oklch(78% 0.12 292);
+    --color-code-comment: oklch(64% 0.012 256);
+
+    --color-tok-key: oklch(76% 0.14 256);
+    --color-tok-str: oklch(82% 0.09 200);
+    --color-tok-mut: oklch(66% 0.014 258);
+
+    /* Peer colours are deliberately NOT overridden. They sit mid-lightness,
+       so they read as saturated chips on either ground and one foreground
+       clears 4.5:1 on all three in both themes. Lightening them for dark
+       measured 4.16–4.49 against their label — worse, not better. */
+  }
 }
 
 /* Base rules live in @layer base so Tailwind utilities can still override
