@@ -1,5 +1,14 @@
 # @apps/web
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @waits/lively-react@0.3.0
+  - @waits/lively-ui@0.3.0
+  - @waits/lively-client@0.3.0
+
 ## 0.1.1
 
 ### Patch Changes

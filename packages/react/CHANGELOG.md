@@ -1,5 +1,17 @@
 # @waits/lively-react
 
+## 0.3.0
+
+### Minor Changes
+
+- Comment threads pinned to text: types, hooks, anchor helpers and UI
+
+### Patch Changes
+
+- Updated dependencies
+  - @waits/lively-types@0.3.0
+  - @waits/lively-client@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

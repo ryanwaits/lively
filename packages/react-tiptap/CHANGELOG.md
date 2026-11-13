@@ -1,5 +1,13 @@
 # @waits/lively-react-tiptap
 
+## 0.3.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @waits/lively-react@0.3.0
+  - @waits/lively-yjs@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes

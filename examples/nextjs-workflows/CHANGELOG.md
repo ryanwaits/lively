@@ -1,5 +1,17 @@
 # @examples/nextjs-workflows
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @waits/lively-types@0.3.0
+  - @waits/lively-react@0.3.0
+  - @waits/lively-ui@0.3.0
+  - @waits/lively-client@0.3.0
+  - @waits/lively-server@0.3.0
+  - @waits/lively-storage@0.3.0
+
 ## 0.1.3
 
 ### Patch Changes
