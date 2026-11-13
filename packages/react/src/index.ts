@@ -46,6 +46,19 @@ export { useLiveState, useLiveStateData, useSetLiveState } from "./use-live-stat
 // Undo/redo hooks
 export { useUndo, useRedo, useCanUndo, useCanRedo, useHistory } from "./use-undo-redo.js";
 
+// Comment threads
+export {
+  useThreads,
+  useThread,
+  useCreateThread,
+  useEditThread,
+  useReplyToThread,
+  useResolveThread,
+  useDeleteThread,
+  THREADS_STORAGE_KEY,
+} from "./use-threads.js";
+export type { ThreadsFilter, CreateThreadInput, EditThreadPatch } from "./use-threads.js";
+
 // Factory
 export { createRoomContext } from "./create-room-context.js";
 
@@ -73,4 +86,9 @@ export type {
   ConnectionStatus,
   PresenceUser,
   CursorData,
+  Thread,
+  ThreadAnchor,
+  ThreadKind,
+  ThreadReply,
+  ThreadStatus,
 } from "@waits/lively-types";
