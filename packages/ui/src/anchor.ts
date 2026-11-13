@@ -9,7 +9,7 @@ const CONTEXT_LENGTH = 32;
 /** Finds the block element with the given id inside `container`. */
 export function findBlock(container: HTMLElement, blockId: string): HTMLElement | null {
   // Compared by attribute value rather than built into a selector, so ids need no escaping.
-  for (const el of container.querySelectorAll(`[${BLOCK_ATTRIBUTE}]`)) {
+  for (const el of Array.from(container.querySelectorAll(`[${BLOCK_ATTRIBUTE}]`))) {
     if (el.getAttribute(BLOCK_ATTRIBUTE) === blockId) return el as HTMLElement;
   }
   return null;
@@ -18,7 +18,7 @@ export function findBlock(container: HTMLElement, blockId: string): HTMLElement 
 function textNodesOf(root: Node): Text[] {
   const nodes: Text[] = [];
   const walk = (node: Node) => {
-    for (const child of node.childNodes) {
+    for (const child of Array.from(node.childNodes)) {
       if (child.nodeType === 3) nodes.push(child as Text);
       else if (child.nodeType === 1) walk(child);
     }

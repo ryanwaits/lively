@@ -30,3 +30,11 @@ export { ConnectionBadge } from "./connection-badge.js";
 export type { ConnectionBadgeProps } from "./connection-badge.js";
 export { CollabPills } from "./collab-pills.js";
 export type { CollabPillsProps } from "./collab-pills.js";
+
+// Comment threads
+export { SelectionCommentPopover } from "./selection-comment-popover.js";
+export type { SelectionCommentPopoverProps } from "./selection-comment-popover.js";
+export { ThreadHighlights } from "./thread-highlights.js";
+export type { ThreadHighlightsProps } from "./thread-highlights.js";
+export { ThreadMarginCards } from "./thread-margin-cards.js";
+export type { ThreadMarginCardsProps } from "./thread-margin-cards.js";
