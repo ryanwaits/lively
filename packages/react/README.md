@@ -611,6 +611,36 @@ const { undo, redo, canUndo, canRedo } = useHistory();
 
 ---
 
+### Comment threads
+
+```ts
+function useThreads(filter?: { status?: ThreadStatus; blockId?: string }): Thread[] | null
+function useThread(id: string): Thread | null
+function useCreateThread(): (input: CreateThreadInput) => string
+function useEditThread(): (id: string, patch: EditThreadPatch) => boolean
+function useReplyToThread(): (id: string, body: string) => string | null
+function useResolveThread(): (id: string, resolved: boolean) => void
+function useDeleteThread(): (id: string) => boolean
+```
+
+Comments and suggested edits pinned to text by block id + quote. Threads live in room storage under the `threads` key, which is created on the first comment. Edit and delete are author-only and return `false` for anyone else.
+
+```tsx
+const threads = useThreads({ status: "open" });
+const createThread = useCreateThread();
+
+createThread({
+  anchor: { blockId: "timeline", quote: "two weeks" },
+  kind: "suggestion",
+  replacement: "three weeks",
+  body: "QA needs a full week.",
+});
+```
+
+Pair with `SelectionCommentPopover`, `ThreadHighlights` and `ThreadMarginCards` from `@waits/lively-ui` for a ready-made review UI.
+
+---
+
 ### `useFollowUser`
 
 ```ts

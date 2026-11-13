@@ -201,6 +201,55 @@ interface ConnectionBadgeProps {
 
 ---
 
+### Comment threads
+
+`<SelectionCommentPopover>`, `<ThreadHighlights>` and `<ThreadMarginCards>` add text-pinned comments and suggested edits to any rendered document. Mark each commentable element with a stable `data-lively-block` id and point the three components at the element that contains them.
+
+```ts
+interface SelectionCommentPopoverProps {
+  containerRef: RefObject<HTMLElement | null>;
+  onCreate?: (threadId: string) => void;
+  metadata?: Record<string, unknown>;  // attached to every thread created here
+  className?: string;
+}
+
+interface ThreadHighlightsProps {
+  containerRef: RefObject<HTMLElement | null>;
+  showResolved?: boolean;       // default: false
+  alpha?: number;               // default: 0.25
+  mode?: "auto" | "rects";      // default: "auto" (CSS Custom Highlight API, rectangle fallback)
+  className?: string;
+}
+
+interface ThreadMarginCardsProps {
+  containerRef: RefObject<HTMLElement | null>;
+  showResolved?: boolean;       // default: false
+  gap?: number;                 // default: 8
+  className?: string;
+}
+```
+
+```tsx
+const ref = useRef<HTMLElement>(null);
+
+<div className="grid grid-cols-[minmax(0,1fr)_18rem] gap-8">
+  <div className="relative">
+    <ThreadHighlights containerRef={ref} />
+    <article ref={ref}>
+      <p data-lively-block="timeline">Build takes two weeks.</p>
+    </article>
+  </div>
+  <ThreadMarginCards containerRef={ref} />
+  <SelectionCommentPopover containerRef={ref} />
+</div>
+```
+
+Threads whose quoted text is no longer in the document are listed under "Detached" with their quote.
+
+`resolveAnchor(container, anchor)` and `anchorFromSelection(container, selection)` are exported for custom UIs: the first returns a DOM `Range` (or `null` when the text is gone), the second builds an anchor from a live selection and rejects selections that span two blocks.
+
+---
+
 ## Full cursor tracking example
 
 ```tsx

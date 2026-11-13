@@ -576,6 +576,110 @@ export default function ReactReferencePage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
+      {/* Comment threads */}
+      {/* ------------------------------------------------------------------ */}
+      <section className="mb-12">
+        <h2 className="font-mono text-sm font-semibold text-text uppercase tracking-wide mb-4">
+          Comment threads
+        </h2>
+
+        <p className="text-muted text-sm mb-4">
+          Comments and suggested edits pinned to text. An anchor is the id of an element marked{" "}
+          <code className="bg-code-bg px-1 py-0.5 border border-code-border text-[11px]">data-lively-block</code>{" "}
+          plus the exact quoted text inside it. Threads live in room storage under{" "}
+          <code className="bg-code-bg px-1 py-0.5 border border-code-border text-[11px]">threads</code>,
+          created on the first comment.
+        </p>
+
+        <div className="mb-6">
+          <p className="text-text text-sm font-semibold mb-2">useThreads / useThread</p>
+          <CodeBlock>
+            <Line>
+              <span className="text-code-keyword">const</span> open ={" "}
+              <span className="text-code-func">useThreads</span>({"{ "}status:{" "}
+              <span className="text-code-string">{'"open"'}</span>
+              {" }"});
+            </Line>
+            <Line>
+              <span className="text-code-keyword">const</span> thread ={" "}
+              <span className="text-code-func">useThread</span>(id);
+            </Line>
+            <Line>
+              <span className="text-code-comment">{"// Thread[] | null (null while storage loads), oldest first"}</span>
+            </Line>
+          </CodeBlock>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-text text-sm font-semibold mb-2">useCreateThread</p>
+          <CodeBlock>
+            <Line>
+              <span className="text-code-keyword">const</span> createThread ={" "}
+              <span className="text-code-func">useCreateThread</span>();
+            </Line>
+            <Line>{" "}</Line>
+            <Line>
+              <span className="text-code-func">createThread</span>({"{"}
+            </Line>
+            <Line indent>
+              anchor: {"{ "}blockId: <span className="text-code-string">{'"timeline"'}</span>, quote:{" "}
+              <span className="text-code-string">{'"two weeks"'}</span>
+              {" }"},
+            </Line>
+            <Line indent>
+              kind: <span className="text-code-string">{'"suggestion"'}</span>,
+            </Line>
+            <Line indent>
+              replacement: <span className="text-code-string">{'"three weeks"'}</span>,
+            </Line>
+            <Line indent>
+              body: <span className="text-code-string">{'"QA needs a full week."'}</span>,
+            </Line>
+            <Line>{"});"}</Line>
+            <Line>
+              <span className="text-code-comment">{"// returns the new thread id"}</span>
+            </Line>
+          </CodeBlock>
+        </div>
+
+        <div>
+          <p className="text-text text-sm font-semibold mb-2">
+            useReplyToThread / useResolveThread / useEditThread / useDeleteThread
+          </p>
+          <CodeBlock>
+            <Line>
+              <span className="text-code-func">reply</span>(id,{" "}
+              <span className="text-code-string">{'"Confirmed."'}</span>);
+            </Line>
+            <Line>
+              <span className="text-code-func">resolve</span>(id,{" "}
+              <span className="text-code-keyword">true</span>);
+            </Line>
+            <Line>
+              <span className="text-code-func">edit</span>(id, {"{ "}body:{" "}
+              <span className="text-code-string">{'"Reworded"'}</span>
+              {" }"});
+            </Line>
+            <Line>
+              <span className="text-code-func">remove</span>(id);
+            </Line>
+            <Line>
+              <span className="text-code-comment">{"// edit and remove are author-only: false for anyone else"}</span>
+            </Line>
+          </CodeBlock>
+        </div>
+
+        <p className="text-muted text-sm mt-4">
+          For a ready-made review UI, pair these with{" "}
+          <code className="bg-code-bg px-1 py-0.5 border border-code-border text-[11px]">SelectionCommentPopover</code>,{" "}
+          <code className="bg-code-bg px-1 py-0.5 border border-code-border text-[11px]">ThreadHighlights</code> and{" "}
+          <code className="bg-code-bg px-1 py-0.5 border border-code-border text-[11px]">ThreadMarginCards</code>{" "}
+          from{" "}
+          <code className="bg-code-bg px-1 py-0.5 border border-code-border text-[11px]">@waits/lively-ui</code>.
+        </p>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
       {/* Suspense */}
       {/* ------------------------------------------------------------------ */}
       <section className="mb-12">

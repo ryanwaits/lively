@@ -11,7 +11,7 @@ Real-time collaboration framework for React. CRDT-powered storage, presence, cur
 | [`@waits/lively-client`](packages/client/) | Framework-agnostic client SDK (browser + Node/Bun) |
 | [`@waits/lively-server`](packages/server/) | WebSocket collaboration server |
 | [`@waits/lively-react`](packages/react/) | React hooks and providers (40+ hooks) |
-| [`@waits/lively-ui`](packages/ui/) | Pre-built components — cursors, avatars, connection badge |
+| [`@waits/lively-ui`](packages/ui/) | Pre-built components — cursors, avatars, connection badge, comment threads |
 | [`@waits/lively-cli`](packages/cli/) | `lively` dev server CLI |
 
 ## Architecture
@@ -94,6 +94,7 @@ function Toolbar() {
 - **Cursors** — real-time cursor tracking with viewport-aware follow mode
 - **Live State** — ephemeral shared key-value state (not persisted)
 - **Undo/Redo** — automatic inverse op capture, batch support
+- **Comment Threads** — comments and suggested edits pinned to text, with selection popover, highlights and margin cards
 - **Broadcast Events** — custom ephemeral events between clients
 - **Activity Tracking** — automatic inactivity detection (away/offline)
 - **Follow Mode** — Figma-style "follow user" with viewport sync
@@ -179,7 +180,7 @@ sharing your credentials.
 - [Getting Started](docs/guides/getting-started.md)
 - [Server Guide](docs/guides/server.md)
 - [Architecture](docs/architecture.md)
-- [Hooks Reference](docs/hooks/) (14 docs covering all hook families)
+- [Hooks Reference](docs/hooks/) (one doc per hook family)
 - [Components](docs/components/)
 
 ## Development

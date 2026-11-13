@@ -27,6 +27,7 @@ Zero-dependency wire protocol and shared data structures.
 
 **Key exports:**
 - `PresenceUser` — `{ userId, displayName, color, connectedAt }`
+- `Thread`, `ThreadAnchor`, `ThreadReply` — comment threads pinned to text by `{ blockId, quote, prefix?, suffix? }`
 - `CursorData` — `{ userId, displayName, color, x, y, lastUpdate, viewportPos?, viewportScale?, cursorType?, highlightRect? }`
 - `HighlightRect` — `{ left, top, width, height }`
 - `ConnectionStatus` — `"connecting" | "connected" | "reconnecting" | "disconnected"`
@@ -128,6 +129,10 @@ React 18+ hooks for seamless integration.
 - `useBroadcastEvent(event)` — send typed custom message
 - `useEventListener(event, cb)` — listen for custom messages
 
+**Comment thread hooks:**
+- `useThreads(filter?)` / `useThread(id)` — threads as plain data, read from a `LiveMap` at the storage root key `threads`
+- `useCreateThread()`, `useEditThread()`, `useReplyToThread()`, `useResolveThread()`, `useDeleteThread()` — mutations, each one undo step; edit and delete are author-only
+
 All hooks use `useSyncExternalStore` with shallow-equality memoization.
 
 ---
@@ -147,6 +152,10 @@ Pre-built styled components for presence and cursors.
 - Built-in dictionaries: `adjectives`, `animals`, `colors`, `names`
 - `NumberDictionary.generate()` — random number with min/max/length options
 - `CollabPills` — colored name pills for all users in the room
+- `SelectionCommentPopover` — "Comment" / "Suggest edit" popover on a text selection inside `data-lively-block` elements
+- `ThreadHighlights` — tints each thread's quote in its author's colour (CSS Custom Highlight API, rectangle fallback)
+- `ThreadMarginCards` — cards aligned to their highlights with reply, resolve and delete; unresolvable anchors grouped as "Detached"
+- `resolveAnchor(container, anchor)` / `anchorFromSelection(container, selection)` — map a `{ blockId, quote }` anchor to a DOM `Range` and back
 
 ---
 
@@ -291,3 +300,5 @@ Full Notion-clone editor with `@waits/lively-react-tiptap`. Slash commands, call
 
 ### nextjs-markdown-editor
 Collaborative markdown editor using `@waits/lively-react-codemirror`. Tabbed file interface, Typora-inspired theme, floating toolbar, status bar, and `codeblockPlugin` for fenced code styling.
+
+Its `/review` route shows comment threads on a rendered document: `SelectionCommentPopover`, `ThreadHighlights` and `ThreadMarginCards` over paragraphs, list items and table rows marked with `data-lively-block`.
