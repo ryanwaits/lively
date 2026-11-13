@@ -108,3 +108,55 @@ export interface LiveStateUpdateBroadcast {
   timestamp: number;
   userId: string;
 }
+
+// --- Comment threads ---
+
+/** A plain comment, or a suggested replacement for the quoted text. */
+export type ThreadKind = "comment" | "suggestion";
+
+export type ThreadStatus = "open" | "resolved";
+
+/**
+ * Where a thread is pinned: a block the app marks with
+ * `data-lively-block="<blockId>"`, plus the exact quoted text inside it
+ * (W3C TextQuoteSelector style).
+ *
+ * `prefix` / `suffix` are the text just before and after the quote. They only
+ * matter when the quote repeats inside the block.
+ */
+export interface ThreadAnchor {
+  blockId: string;
+  quote: string;
+  prefix?: string;
+  suffix?: string;
+}
+
+export interface ThreadReply {
+  id: string;
+  authorId: string;
+  authorName: string;
+  body: string;
+  createdAt: number;
+  editedAt?: number;
+}
+
+export interface Thread {
+  id: string;
+  anchor: ThreadAnchor;
+  kind: ThreadKind;
+  /** For a suggestion: the text that should replace `anchor.quote`. */
+  replacement?: string;
+  body: string;
+  authorId: string;
+  authorName: string;
+  authorColor: string;
+  status: ThreadStatus;
+  createdAt: number;
+  /** Set only while `status` is `"resolved"`. */
+  resolvedAt?: number;
+  /** User id of whoever resolved it. Set only while `status` is `"resolved"`. */
+  resolvedBy?: string;
+  replies: ThreadReply[];
+  /** Free-form app data, e.g. `{ batch: "review-3" }`. Lively never reads it. */
+  metadata?: Record<string, unknown>;
+}

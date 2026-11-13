@@ -13,6 +13,11 @@ export type {
   LiveStateUpdateMessage,
   LiveStateInitMessage,
   LiveStateUpdateBroadcast,
+  ThreadKind,
+  ThreadStatus,
+  ThreadAnchor,
+  ThreadReply,
+  Thread,
 } from "./types.js";
 
 export type {
