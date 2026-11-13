@@ -14,6 +14,9 @@ export {
 } from "./generate-name.js";
 export type { GenerateNameConfig } from "./generate-name.js";
 
+// Thread anchors
+export { resolveAnchor, anchorFromSelection, findBlock, BLOCK_ATTRIBUTE } from "./anchor.js";
+
 // Components
 export { Cursor } from "./cursor.js";
 export type { CursorProps } from "./cursor.js";
